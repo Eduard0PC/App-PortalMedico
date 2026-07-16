@@ -1,0 +1,6 @@
+@SistemaCitas.API_HostAddress = http://localhost:5250
+
+GET {{SistemaCitas.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

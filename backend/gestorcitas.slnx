@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SistemaCitas.API/SistemaCitas.API.csproj" />
+    <Project Path="src/SistemaCitas.Application/SistemaCitas.Application.csproj" />
+    <Project Path="src/SistemaCitas.Domain/SistemaCitas.Domain.csproj" />
+    <Project Path="src/SistemaCitas.Infrastructure/SistemaCitas.Infrastructure.csproj" />
+  </Folder>
+</Solution>
