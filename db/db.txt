@@ -1,0 +1,135 @@
+-- ================================================================
+-- Sistema de Citas Médicas — Script de creación de base de datos
+-- Motor: SQL Server
+-- Basado en: especificacion_backend_sistema_citas.md (secciones 3 y 4)
+-- ================================================================
+
+IF DB_ID('SistemaCitasDB') IS NULL
+BEGIN
+    CREATE DATABASE SistemaCitasDB;
+END
+GO
+
+USE SistemaCitasDB;
+GO
+
+-- ================================================================
+-- 1. Especialidades
+-- ================================================================
+CREATE TABLE Especialidades (
+    id_especialidad INT IDENTITY(1,1) PRIMARY KEY,
+    nombre          VARCHAR(100) NOT NULL,
+    descripcion     VARCHAR(255) NULL
+);
+GO
+
+-- ================================================================
+-- 2. Medicos
+-- ================================================================
+CREATE TABLE Medicos (
+    id_medico        INT IDENTITY(1,1) PRIMARY KEY,
+    nombre           VARCHAR(100) NOT NULL,
+    apellido         VARCHAR(100) NOT NULL,
+    correo           VARCHAR(150) NOT NULL,
+    password_hash    VARCHAR(255) NOT NULL,
+    id_especialidad  INT NOT NULL,
+    telefono         VARCHAR(20) NULL,
+    activo           BIT NOT NULL DEFAULT 1,
+    fecha_creacion   DATETIME NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT UQ_Medicos_Correo UNIQUE (correo),
+    CONSTRAINT FK_Medicos_Especialidades FOREIGN KEY (id_especialidad)
+        REFERENCES Especialidades(id_especialidad)
+);
+GO
+
+-- ================================================================
+-- 3. Pacientes
+-- ================================================================
+CREATE TABLE Pacientes (
+    id_paciente       INT IDENTITY(1,1) PRIMARY KEY,
+    nombre            VARCHAR(100) NOT NULL,
+    apellido          VARCHAR(100) NOT NULL,
+    correo            VARCHAR(150) NOT NULL,
+    password_hash     VARCHAR(255) NOT NULL,
+    telefono          VARCHAR(20) NULL,
+    fecha_nacimiento  DATE NULL,
+    fecha_creacion    DATETIME NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT UQ_Pacientes_Correo UNIQUE (correo)
+);
+GO
+
+-- ================================================================
+-- 4. Administradores
+-- ================================================================
+CREATE TABLE Administradores (
+    id_administrador  INT IDENTITY(1,1) PRIMARY KEY,
+    nombre            VARCHAR(100) NOT NULL,
+    correo            VARCHAR(150) NOT NULL,
+    password_hash     VARCHAR(255) NOT NULL,
+    fecha_creacion    DATETIME NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT UQ_Administradores_Correo UNIQUE (correo)
+);
+GO
+
+-- ================================================================
+-- 5. HorarioMedico (disponibilidad recurrente semanal)
+-- ================================================================
+CREATE TABLE HorarioMedico (
+    id_horario   INT IDENTITY(1,1) PRIMARY KEY,
+    id_medico    INT NOT NULL,
+    dia_semana   INT NOT NULL,   -- 1=Lunes ... 5=Viernes
+    hora_inicio  TIME NOT NULL,
+    hora_fin     TIME NOT NULL,
+    CONSTRAINT FK_Horario_Medicos FOREIGN KEY (id_medico)
+        REFERENCES Medicos(id_medico),
+    CONSTRAINT CK_Horario_DiaSemana CHECK (dia_semana BETWEEN 1 AND 5),
+    CONSTRAINT CK_Horario_Rango CHECK (hora_fin > hora_inicio)
+);
+GO
+
+-- ================================================================
+-- 6. Citas (tabla central)
+-- ================================================================
+CREATE TABLE Citas (
+    id_cita               INT IDENTITY(1,1) PRIMARY KEY,
+    id_paciente           INT NOT NULL,
+    id_medico             INT NOT NULL,
+    fecha                 DATE NOT NULL,
+    hora_inicio           TIME NOT NULL,
+    hora_fin              TIME NOT NULL,   -- hora_inicio + 30 min
+    motivo_consulta       VARCHAR(255) NOT NULL,
+    estado                VARCHAR(20) NOT NULL DEFAULT 'Programada',
+    nota_medica           VARCHAR(MAX) NULL,   -- TEXT está obsoleto en SQL Server; se usa VARCHAR(MAX)
+    cancelada_por         VARCHAR(20) NULL,    -- 'Paciente' / 'Administrador'
+    fecha_creacion        DATETIME NOT NULL DEFAULT GETDATE(),
+    fecha_actualizacion   DATETIME NOT NULL DEFAULT GETDATE(),
+    CONSTRAINT FK_Citas_Pacientes FOREIGN KEY (id_paciente)
+        REFERENCES Pacientes(id_paciente),
+    CONSTRAINT FK_Citas_Medicos FOREIGN KEY (id_medico)
+        REFERENCES Medicos(id_medico),
+    CONSTRAINT CK_Citas_Estado CHECK (estado IN ('Programada','Atendida','Cancelada')),
+    CONSTRAINT CK_Citas_CanceladaPor CHECK (
+        cancelada_por IS NULL OR cancelada_por IN ('Paciente','Administrador')
+    )
+);
+GO
+
+-- ================================================================
+-- Índices recomendados (consultas frecuentes: agenda por médico,
+-- historial por paciente, disponibilidad por fecha)
+-- ================================================================
+CREATE INDEX IX_Citas_Medico_Fecha    ON Citas(id_medico, fecha);
+CREATE INDEX IX_Citas_Paciente        ON Citas(id_paciente);
+CREATE INDEX IX_HorarioMedico_Medico  ON HorarioMedico(id_medico);
+GO
+
+-- ================================================================
+-- Índice único filtrado: evita doble reserva del mismo médico
+-- en el mismo bloque (excluye citas canceladas).
+-- No está en la especificación original; se agrega como refuerzo
+-- de la regla de negocio, además de la validación en el backend.
+-- ================================================================
+CREATE UNIQUE INDEX UQ_Citas_Medico_Bloque
+    ON Citas(id_medico, fecha, hora_inicio)
+    WHERE estado <> 'Cancelada';
+GO
