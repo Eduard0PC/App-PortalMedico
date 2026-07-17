@@ -1,0 +1,268 @@
+import 'package:flutter/material.dart';
+import '../../core/app_state.dart';
+import '../../core/theme.dart';
+
+class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
+  String? _errorMessage;
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _handleLogin() {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _errorMessage = null;
+      });
+      
+      final appState = AppStateProvider.of(context);
+      final success = appState.login(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+
+      if (success) {
+        if (appState.userRole == 'Medico') {
+          Navigator.pushReplacementNamed(context, '/medico-home');
+        } else {
+          Navigator.pushReplacementNamed(context, '/paciente-home');
+        }
+      } else {
+        setState(() {
+          _errorMessage = 'Credenciales inválidas. Intente de nuevo.';
+        });
+      }
+    }
+  }
+
+  void _handleDemoLogin(String role) {
+    final appState = AppStateProvider.of(context);
+    appState.login('', '', isDemo: true, demoRole: role);
+    if (role == 'Medico') {
+      Navigator.pushReplacementNamed(context, '/medico-home');
+    } else {
+      Navigator.pushReplacementNamed(context, '/paciente-home');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Logo/Icon Header
+                  Container(
+                    height: 80,
+                    width: 80,
+                    decoration: const BoxDecoration(
+                      color: AppTheme.primaryLight,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.local_hospital_rounded,
+                      size: 44,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  
+                  // Title & Subtitle
+                  Text(
+                    'Portal Médico',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: AppTheme.primary,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Ingresa para gestionar tus citas médicas',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Error Message Banner
+                  if (_errorMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppTheme.error.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: AppTheme.error.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline, color: AppTheme.error),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: const TextStyle(color: AppTheme.error, fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  // Email Field
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Correo Electrónico',
+                      hintText: 'ejemplo@correo.com',
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Por favor ingresa tu correo';
+                      }
+                      // Basic regex for email
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
+                        return 'Ingresa un correo electrónico válido';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Password Field
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: _obscurePassword,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _handleLogin(),
+                    decoration: InputDecoration(
+                      labelText: 'Contraseña',
+                      hintText: '••••••••',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor ingresa tu contraseña';
+                      }
+                      if (value.length < 6) {
+                        return 'La contraseña debe tener al menos 6 caracteres';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Sign In Button
+                  ElevatedButton(
+                    onPressed: _handleLogin,
+                    child: const Text('Iniciar Sesión'),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Quick Demo Login Buttons (Row of Patient & Doctor)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _handleDemoLogin('Paciente'),
+                          icon: const Icon(Icons.person_outline, color: AppTheme.secondary, size: 18),
+                          label: const Text('Demo Paciente', style: TextStyle(fontSize: 12)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppTheme.secondary, width: 1.5),
+                            foregroundColor: AppTheme.secondary,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => _handleDemoLogin('Medico'),
+                          icon: const Icon(Icons.medical_services_outlined, color: AppTheme.primary, size: 18),
+                          label: const Text('Demo Médico', style: TextStyle(fontSize: 12)),
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: AppTheme.primary, width: 1.5),
+                            foregroundColor: AppTheme.primary,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+
+                  // Register Redirection
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '¿No tienes una cuenta? ',
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.pushNamed(context, '/register');
+                        },
+                        child: Text(
+                          'Regístrate aquí',
+                          style: TextStyle(
+                            color: theme.primaryColor,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
