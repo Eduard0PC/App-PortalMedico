@@ -18,7 +18,7 @@ public sealed class RegistrarPacienteCommandValidator : AbstractValidator<Regist
             .NotEmpty()
             .MinimumLength(6).WithMessage("La contraseña debe tener al menos 6 caracteres.");
 
-        RuleFor(x => x.Telefono).MaximumLength(20);
+        RuleFor(x => x.Telefono).MaximumLength(12).MinimumLength(7).WithMessage("El teléfono debe tener entre 7 y 12 caracteres.");
 
         RuleFor(x => x.FechaNacimiento)
             .LessThan(DateOnly.FromDateTime(DateTime.UtcNow))
