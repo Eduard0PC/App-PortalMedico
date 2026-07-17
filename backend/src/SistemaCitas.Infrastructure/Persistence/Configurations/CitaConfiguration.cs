@@ -62,10 +62,10 @@ public sealed class CitaConfiguration : IEntityTypeConfiguration<Cita>
         // estado <> 'Cancelada', así que una cita cancelada libera el bloque para reutilizarlo.
         // Si dos pacientes intentan reservar el mismo (medico, fecha, hora_inicio) casi al mismo
         // tiempo, el segundo INSERT es rechazado por SQL Server aunque ambos hayan pasado la
-        // validación de disponibilidad en memoria — es la defensa real, no la validación previa.
-        builder.HasIndex(c => new { c.IdMedico, c.Fecha, c.HoraInicio })
-            .IsUnique()
-            .HasFilter("[estado] <> 'Cancelada'")
-            .HasDatabaseName("IX_Citas_Medico_Fecha_HoraInicio_Activas");
+        // validación de disponibilidad en memoria — es la defensa real, no la validación previa.// Después
+    builder.HasIndex(c => new { c.IdMedico, c.Fecha, c.HoraInicio })
+    .IsUnique()
+    .HasFilter("estado <> 'Cancelada'")
+    .HasDatabaseName("IX_Citas_Medico_Fecha_HoraInicio_Activas");
     }
 }

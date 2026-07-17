@@ -26,8 +26,8 @@ public sealed class PacienteRepository : IPacienteRepository
         if (!string.IsNullOrWhiteSpace(nombre))
         {
             query = query.Where(p =>
-                EF.Functions.Like(p.Nombre, $"%{nombre}%") ||
-                EF.Functions.Like(p.Apellido, $"%{nombre}%"));
+                EF.Functions.ILike(p.Nombre, $"%{nombre}%") ||
+                EF.Functions.ILike(p.Apellido, $"%{nombre}%"));
         }
 
         return await query.ToListAsync(ct);

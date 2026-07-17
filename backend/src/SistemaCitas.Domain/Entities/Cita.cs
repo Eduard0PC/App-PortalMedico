@@ -20,8 +20,7 @@ public class Cita
     public DateTime FechaCreacion { get; private set; }
     public DateTime FechaActualizacion { get; private set; }
 
-    // Token de concurrencia optimista. En Fase 2 se configura como IsRowVersion()
-    public byte[] RowVersion { get; private set; } = Array.Empty<byte>();
+    public uint RowVersion { get; private set; } 
 
     protected Cita() { }
 

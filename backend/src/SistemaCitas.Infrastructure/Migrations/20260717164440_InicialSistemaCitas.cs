@@ -1,12 +1,13 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
 namespace SistemaCitas.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InicialSistemaCitas : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,12 +16,12 @@ namespace SistemaCitas.Infrastructure.Migrations
                 name: "Administradores",
                 columns: table => new
                 {
-                    id_administrador = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    nombre = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    correo = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    password_hash = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    fecha_creacion = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    id_administrador = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    nombre = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    correo = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    password_hash = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    fecha_creacion = table.Column<DateTime>(type: "timestamptz", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -31,10 +32,10 @@ namespace SistemaCitas.Infrastructure.Migrations
                 name: "Especialidades",
                 columns: table => new
                 {
-                    id_especialidad = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    nombre = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    descripcion = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true)
+                    id_especialidad = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    nombre = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    descripcion = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -45,15 +46,15 @@ namespace SistemaCitas.Infrastructure.Migrations
                 name: "Pacientes",
                 columns: table => new
                 {
-                    id_paciente = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    nombre = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    apellido = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    correo = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    password_hash = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    telefono = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    id_paciente = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    nombre = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    apellido = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    correo = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    password_hash = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    telefono = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
                     fecha_nacimiento = table.Column<DateOnly>(type: "date", nullable: true),
-                    fecha_creacion = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    fecha_creacion = table.Column<DateTime>(type: "timestamptz", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -64,16 +65,16 @@ namespace SistemaCitas.Infrastructure.Migrations
                 name: "Medicos",
                 columns: table => new
                 {
-                    id_medico = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    nombre = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    apellido = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    correo = table.Column<string>(type: "nvarchar(150)", maxLength: 150, nullable: false),
-                    password_hash = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    id_especialidad = table.Column<int>(type: "int", nullable: false),
-                    telefono = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    activo = table.Column<bool>(type: "bit", nullable: false),
-                    fecha_creacion = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    id_medico = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    nombre = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    apellido = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    correo = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    password_hash = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    id_especialidad = table.Column<int>(type: "integer", nullable: false),
+                    telefono = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    activo = table.Column<bool>(type: "boolean", nullable: false),
+                    fecha_creacion = table.Column<DateTime>(type: "timestamptz", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -90,20 +91,20 @@ namespace SistemaCitas.Infrastructure.Migrations
                 name: "Citas",
                 columns: table => new
                 {
-                    id_cita = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    id_paciente = table.Column<int>(type: "int", nullable: false),
-                    id_medico = table.Column<int>(type: "int", nullable: false),
+                    id_cita = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    id_paciente = table.Column<int>(type: "integer", nullable: false),
+                    id_medico = table.Column<int>(type: "integer", nullable: false),
                     fecha = table.Column<DateOnly>(type: "date", nullable: false),
-                    hora_inicio = table.Column<TimeOnly>(type: "time", nullable: false),
-                    hora_fin = table.Column<TimeOnly>(type: "time", nullable: false),
-                    motivo_consulta = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
-                    estado = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    hora_inicio = table.Column<TimeOnly>(type: "time without time zone", nullable: false),
+                    hora_fin = table.Column<TimeOnly>(type: "time without time zone", nullable: false),
+                    motivo_consulta = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
+                    estado = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
                     nota_medica = table.Column<string>(type: "text", nullable: true),
-                    cancelada_por = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
-                    fecha_creacion = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    fecha_actualizacion = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: false)
+                    cancelada_por = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: true),
+                    fecha_creacion = table.Column<DateTime>(type: "timestamptz", nullable: false),
+                    fecha_actualizacion = table.Column<DateTime>(type: "timestamptz", nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -126,12 +127,12 @@ namespace SistemaCitas.Infrastructure.Migrations
                 name: "HorarioMedico",
                 columns: table => new
                 {
-                    id_horario = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    id_medico = table.Column<int>(type: "int", nullable: false),
-                    dia_semana = table.Column<int>(type: "int", nullable: false),
-                    hora_inicio = table.Column<TimeOnly>(type: "time", nullable: false),
-                    hora_fin = table.Column<TimeOnly>(type: "time", nullable: false)
+                    id_horario = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    id_medico = table.Column<int>(type: "integer", nullable: false),
+                    dia_semana = table.Column<int>(type: "integer", nullable: false),
+                    hora_inicio = table.Column<TimeOnly>(type: "time without time zone", nullable: false),
+                    hora_fin = table.Column<TimeOnly>(type: "time without time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -160,7 +161,7 @@ namespace SistemaCitas.Infrastructure.Migrations
                 table: "Citas",
                 columns: new[] { "id_medico", "fecha", "hora_inicio" },
                 unique: true,
-                filter: "[estado] <> 'Cancelada'");
+                filter: "estado <> 'Cancelada'");
 
             migrationBuilder.CreateIndex(
                 name: "IX_HorarioMedico_id_medico",

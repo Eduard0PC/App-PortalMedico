@@ -2,9 +2,9 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Metadata;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SistemaCitas.Infrastructure.Persistence;
 
 #nullable disable
@@ -12,8 +12,8 @@ using SistemaCitas.Infrastructure.Persistence;
 namespace SistemaCitas.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260717022108_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260717164440_InicialSistemaCitas")]
+    partial class InicialSistemaCitas
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -21,39 +21,39 @@ namespace SistemaCitas.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("ProductVersion", "10.0.10")
-                .HasAnnotation("Relational:MaxIdentifierLength", 128);
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
-            SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("SistemaCitas.Domain.Entities.Administrador", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id_administrador");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Correo")
                         .IsRequired()
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)")
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("correo");
 
                     b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamptz")
                         .HasColumnName("fecha_creacion");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("nombre");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("password_hash");
 
                     b.HasKey("Id");
@@ -68,20 +68,20 @@ namespace SistemaCitas.Infrastructure.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id_cita");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("CanceladaPor")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("cancelada_por");
 
                     b.Property<string>("Estado")
                         .IsRequired()
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("estado");
 
                     b.Property<DateOnly>("Fecha")
@@ -89,44 +89,44 @@ namespace SistemaCitas.Infrastructure.Migrations
                         .HasColumnName("fecha");
 
                     b.Property<DateTime>("FechaActualizacion")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamptz")
                         .HasColumnName("fecha_actualizacion");
 
                     b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamptz")
                         .HasColumnName("fecha_creacion");
 
                     b.Property<TimeOnly>("HoraFin")
-                        .HasColumnType("time")
+                        .HasColumnType("time without time zone")
                         .HasColumnName("hora_fin");
 
                     b.Property<TimeOnly>("HoraInicio")
-                        .HasColumnType("time")
+                        .HasColumnType("time without time zone")
                         .HasColumnName("hora_inicio");
 
                     b.Property<int>("IdMedico")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id_medico");
 
                     b.Property<int>("IdPaciente")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id_paciente");
 
                     b.Property<string>("MotivoConsulta")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("motivo_consulta");
 
                     b.Property<string>("NotaMedica")
                         .HasColumnType("text")
                         .HasColumnName("nota_medica");
 
-                    b.Property<byte[]>("RowVersion")
+                    b.Property<uint>("RowVersion")
                         .IsConcurrencyToken()
-                        .IsRequired()
                         .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -135,7 +135,7 @@ namespace SistemaCitas.Infrastructure.Migrations
                     b.HasIndex("IdMedico", "Fecha", "HoraInicio")
                         .IsUnique()
                         .HasDatabaseName("IX_Citas_Medico_Fecha_HoraInicio_Activas")
-                        .HasFilter("[estado] <> 'Cancelada'");
+                        .HasFilter("estado <> 'Cancelada'");
 
                     b.ToTable("Citas", (string)null);
                 });
@@ -144,20 +144,20 @@ namespace SistemaCitas.Infrastructure.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id_especialidad");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Descripcion")
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("descripcion");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("nombre");
 
                     b.HasKey("Id");
@@ -169,25 +169,25 @@ namespace SistemaCitas.Infrastructure.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id_horario");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("DiaSemana")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("dia_semana");
 
                     b.Property<TimeOnly>("HoraFin")
-                        .HasColumnType("time")
+                        .HasColumnType("time without time zone")
                         .HasColumnName("hora_fin");
 
                     b.Property<TimeOnly>("HoraInicio")
-                        .HasColumnType("time")
+                        .HasColumnType("time without time zone")
                         .HasColumnName("hora_inicio");
 
                     b.Property<int>("IdMedico")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id_medico");
 
                     b.HasKey("Id");
@@ -201,50 +201,50 @@ namespace SistemaCitas.Infrastructure.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id_medico");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<bool>("Activo")
-                        .HasColumnType("bit")
+                        .HasColumnType("boolean")
                         .HasColumnName("activo");
 
                     b.Property<string>("Apellido")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("apellido");
 
                     b.Property<string>("Correo")
                         .IsRequired()
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)")
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("correo");
 
                     b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamptz")
                         .HasColumnName("fecha_creacion");
 
                     b.Property<int>("IdEspecialidad")
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id_especialidad");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("nombre");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("password_hash");
 
                     b.Property<string>("Telefono")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("telefono");
 
                     b.HasKey("Id");
@@ -261,25 +261,25 @@ namespace SistemaCitas.Infrastructure.Migrations
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int")
+                        .HasColumnType("integer")
                         .HasColumnName("id_paciente");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Apellido")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("apellido");
 
                     b.Property<string>("Correo")
                         .IsRequired()
                         .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)")
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("correo");
 
                     b.Property<DateTime>("FechaCreacion")
-                        .HasColumnType("datetime2")
+                        .HasColumnType("timestamptz")
                         .HasColumnName("fecha_creacion");
 
                     b.Property<DateOnly?>("FechaNacimiento")
@@ -289,18 +289,18 @@ namespace SistemaCitas.Infrastructure.Migrations
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)")
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("nombre");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
                         .HasMaxLength(255)
-                        .HasColumnType("nvarchar(255)")
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("password_hash");
 
                     b.Property<string>("Telefono")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)")
+                        .HasColumnType("character varying(20)")
                         .HasColumnName("telefono");
 
                     b.HasKey("Id");
