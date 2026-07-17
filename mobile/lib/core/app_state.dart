@@ -1,5 +1,17 @@
+import 'dart:convert';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../shared/models.dart';
+
+class AuthException implements Exception {
+  final String message;
+  AuthException(this.message);
+
+  @override
+  String toString() => message;
+}
 
 class AppState extends ChangeNotifier {
   // Current logged in user (null if guest)
@@ -7,12 +19,21 @@ class AppState extends ChangeNotifier {
   String? _currentUserName;
   int? _currentUserId;
   String? _userRole; // 'Paciente' o 'Medico'
+  String? _token;
 
   bool get isLoggedIn => _currentUserEmail != null;
   String get currentUserName => _currentUserName ?? 'Paciente';
   int get currentUserId => _currentUserId ?? 1;
   String get currentUserEmail => _currentUserEmail ?? '';
   String get userRole => _userRole ?? 'Paciente';
+  String? get token => _token;
+
+  String get _backendBaseUrl {
+    if (kIsWeb) {
+      return 'http://localhost:5250';
+    }
+    return Platform.isAndroid ? 'http://10.0.2.2:5250' : 'http://localhost:5250';
+  }
 
   // Data lists
   final List<Especialidad> _especialidades = [];
@@ -263,60 +284,142 @@ class AppState extends ChangeNotifier {
   }
 
   // Authentication Actions
-  bool login(String email, String password, {bool isDemo = false, String? demoRole}) {
+  Future<bool> login(String email, String password, {bool isDemo = false, String? demoRole}) async {
     if (isDemo) {
       if (demoRole == 'Medico') {
         _currentUserEmail = 'carlos.garcia@clinica.com';
         _currentUserName = 'Carlos García';
         _currentUserId = 101; // Dr. Carlos García
         _userRole = 'Medico';
+        _token = 'demo-token';
       } else {
         _currentUserEmail = 'paciente.demo@gmail.com';
         _currentUserName = 'Eduardo García';
         _currentUserId = 1;
         _userRole = 'Paciente';
+        _token = 'demo-token';
       }
       notifyListeners();
       return true;
     }
 
-    if (email.isNotEmpty && password.length >= 6) {
-      final trimmedEmail = email.trim().toLowerCase();
-      // Check if email corresponds to a doctor
-      final doctorIndex = _medicos.indexWhere((doc) => doc.correo.toLowerCase() == trimmedEmail);
-      if (doctorIndex != -1) {
-        final doc = _medicos[doctorIndex];
-        _currentUserEmail = doc.correo;
-        _currentUserName = doc.nombreCompleto;
-        _currentUserId = doc.idMedico;
-        _userRole = 'Medico';
-      } else {
-        _currentUserEmail = email;
-        // Extract name from email
-        final namePart = email.split('@').first;
-        _currentUserName = namePart.substring(0, 1).toUpperCase() + namePart.substring(1);
-        _currentUserId = email.hashCode.abs();
-        _userRole = 'Paciente';
+    if (email.isEmpty || password.isEmpty) return false;
+
+    final body = jsonEncode({
+      'correo': email.trim(),
+      'password': password,
+    });
+
+    final headers = {
+      'Content-Type': 'application/json',
+    };
+
+    // 1. Intentar iniciar sesión como Paciente
+    try {
+      final pacienteResponse = await http.post(
+        Uri.parse('$_backendBaseUrl/api/auth/pacientes/login'),
+        headers: headers,
+        body: body,
+      ).timeout(const Duration(seconds: 10));
+
+      if (pacienteResponse.statusCode == 200) {
+        final data = jsonDecode(pacienteResponse.body);
+        _token = data['token'];
+        _currentUserId = data['id'];
+        _currentUserName = data['nombreCompleto'];
+        _currentUserEmail = data['correo'];
+        _userRole = data['rol']; // "Paciente"
+        notifyListeners();
+        return true;
       }
-      notifyListeners();
-      return true;
+    } catch (e) {
+      debugPrint('Error al conectar con login de Paciente: $e');
     }
-    return false;
+
+    // 2. Si no tiene éxito, intentar como Médico
+    try {
+      final medicoResponse = await http.post(
+        Uri.parse('$_backendBaseUrl/api/auth/medicos/login'),
+        headers: headers,
+        body: body,
+      ).timeout(const Duration(seconds: 10));
+
+      if (medicoResponse.statusCode == 200) {
+        final data = jsonDecode(medicoResponse.body);
+        _token = data['token'];
+        _currentUserId = data['id'];
+        _currentUserName = data['nombreCompleto'];
+        _currentUserEmail = data['correo'];
+        _userRole = data['rol']; // "Medico"
+        notifyListeners();
+        return true;
+      } else if (medicoResponse.statusCode == 400 || medicoResponse.statusCode == 401) {
+        final Map<String, dynamic> errorBody = jsonDecode(medicoResponse.body);
+        final String message = errorBody['message'] ?? errorBody['detail'] ?? 'Credenciales incorrectas.';
+        throw AuthException(message);
+      }
+    } on AuthException {
+      rethrow;
+    } catch (e) {
+      debugPrint('Error al conectar con login de Médico: $e');
+      throw AuthException('No se pudo establecer conexión con el servidor.');
+    }
+
+    throw AuthException('Correo o contraseña incorrectos.');
   }
 
-  void register({
+  Future<void> register({
     required String nombre,
     required String apellido,
     required String correo,
     required String telefono,
     required DateTime? fechaNacimiento,
     required String password,
-  }) {
-    _currentUserEmail = correo;
-    _currentUserName = '$nombre $apellido';
-    _currentUserId = correo.hashCode.abs();
-    _userRole = 'Paciente';
-    notifyListeners();
+  }) async {
+    final Map<String, dynamic> bodyMap = {
+      'nombre': nombre.trim(),
+      'apellido': apellido.trim(),
+      'correo': correo.trim(),
+      'password': password,
+      'telefono': telefono.trim().isEmpty ? null : telefono.trim(),
+    };
+
+    if (fechaNacimiento != null) {
+      final year = fechaNacimiento.year.toString();
+      final month = fechaNacimiento.month.toString().padLeft(2, '0');
+      final day = fechaNacimiento.day.toString().padLeft(2, '0');
+      bodyMap['fechaNacimiento'] = '$year-$month-$day';
+    } else {
+      bodyMap['fechaNacimiento'] = null;
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse('$_backendBaseUrl/api/auth/pacientes/register'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(bodyMap),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        _token = data['token'];
+        _currentUserId = data['id'];
+        _currentUserName = data['nombreCompleto'];
+        _currentUserEmail = data['correo'];
+        _userRole = data['rol']; // "Paciente"
+        notifyListeners();
+      } else {
+        final data = jsonDecode(response.body);
+        final errorMsg = data['message'] ?? data['detail'] ?? 'Error al registrar el paciente.';
+        throw AuthException(errorMsg);
+      }
+    } catch (e) {
+      if (e is AuthException) {
+        rethrow;
+      }
+      debugPrint('Error en registro: $e');
+      throw AuthException('No se pudo establecer conexión con el servidor.');
+    }
   }
 
   void logout() {
@@ -324,6 +427,7 @@ class AppState extends ChangeNotifier {
     _currentUserName = null;
     _currentUserId = null;
     _userRole = null;
+    _token = null;
     notifyListeners();
   }
 

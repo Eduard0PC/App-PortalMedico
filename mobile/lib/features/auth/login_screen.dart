@@ -14,6 +14,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
   String? _errorMessage;
 
   @override
@@ -23,35 +24,56 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void _handleLogin() {
+  Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _errorMessage = null;
+        _isLoading = true;
       });
       
-      final appState = AppStateProvider.of(context);
-      final success = appState.login(
-        _emailController.text.trim(),
-        _passwordController.text,
-      );
+      try {
+        final appState = AppStateProvider.of(context);
+        final success = await appState.login(
+          _emailController.text.trim(),
+          _passwordController.text,
+        );
 
-      if (success) {
-        if (appState.userRole == 'Medico') {
-          Navigator.pushReplacementNamed(context, '/medico-home');
+        if (success) {
+          if (!mounted) return;
+          if (appState.userRole == 'Medico') {
+            Navigator.pushReplacementNamed(context, '/medico-home');
+          } else {
+            Navigator.pushReplacementNamed(context, '/paciente-home');
+          }
         } else {
-          Navigator.pushReplacementNamed(context, '/paciente-home');
+          setState(() {
+            _errorMessage = 'Credenciales inválidas. Intente de nuevo.';
+          });
         }
-      } else {
+      } catch (e) {
         setState(() {
-          _errorMessage = 'Credenciales inválidas. Intente de nuevo.';
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
         });
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     }
   }
 
-  void _handleDemoLogin(String role) {
+  void _handleDemoLogin(String role) async {
     final appState = AppStateProvider.of(context);
-    appState.login('', '', isDemo: true, demoRole: role);
+    setState(() {
+      _isLoading = true;
+    });
+    await appState.login('', '', isDemo: true, demoRole: role);
+    setState(() {
+      _isLoading = false;
+    });
+    if (!mounted) return;
     if (role == 'Medico') {
       Navigator.pushReplacementNamed(context, '/medico-home');
     } else {
@@ -92,7 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   
                   // Title & Subtitle
                   Text(
-                    'Portal Médico',
+                    'MediApp',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.headlineMedium?.copyWith(
                       color: AppTheme.primary,
@@ -189,10 +211,18 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Sign In Button
-                  ElevatedButton(
-                    onPressed: _handleLogin,
-                    child: const Text('Iniciar Sesión'),
+                   ElevatedButton(
+                    onPressed: _isLoading ? null : _handleLogin,
+                    child: _isLoading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text('Iniciar Sesión'),
                   ),
                   const SizedBox(height: 16),
 
@@ -201,7 +231,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () => _handleDemoLogin('Paciente'),
+                          onPressed: _isLoading ? null : () => _handleDemoLogin('Paciente'),
                           icon: const Icon(Icons.person_outline, color: AppTheme.secondary, size: 18),
                           label: const Text('Demo Paciente', style: TextStyle(fontSize: 12)),
                           style: OutlinedButton.styleFrom(
@@ -217,7 +247,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: () => _handleDemoLogin('Medico'),
+                          onPressed: _isLoading ? null : () => _handleDemoLogin('Medico'),
                           icon: const Icon(Icons.medical_services_outlined, color: AppTheme.primary, size: 18),
                           label: const Text('Demo Médico', style: TextStyle(fontSize: 12)),
                           style: OutlinedButton.styleFrom(
