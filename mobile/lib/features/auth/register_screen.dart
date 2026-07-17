@@ -23,6 +23,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   DateTime? _fechaNacimiento;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isLoading = false;
+  String? _errorMessage;
 
   @override
   void dispose() {
@@ -61,36 +63,53 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  void _handleRegister() {
+  Future<void> _handleRegister() async {
     if (_formKey.currentState!.validate()) {
       if (_fechaNacimiento == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Por favor, selecciona tu fecha de nacimiento'),
-            backgroundColor: AppTheme.error,
-          ),
-        );
+        setState(() {
+          _errorMessage = 'Por favor, selecciona tu fecha de nacimiento';
+        });
         return;
       }
 
-      final appState = AppStateProvider.of(context);
-      appState.register(
-        nombre: _nombreController.text.trim(),
-        apellido: _apellidoController.text.trim(),
-        correo: _correoController.text.trim(),
-        telefono: _telefonoController.text.trim(),
-        fechaNacimiento: _fechaNacimiento,
-        password: _passwordController.text,
-      );
+      setState(() {
+        _errorMessage = null;
+        _isLoading = true;
+      });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Cuenta de paciente creada con éxito'),
-          backgroundColor: AppTheme.secondary,
-        ),
-      );
+      try {
+        final appState = AppStateProvider.of(context);
+        await appState.register(
+          nombre: _nombreController.text.trim(),
+          apellido: _apellidoController.text.trim(),
+          correo: _correoController.text.trim(),
+          telefono: _telefonoController.text.trim(),
+          fechaNacimiento: _fechaNacimiento,
+          password: _passwordController.text,
+        );
 
-      Navigator.pushNamedAndRemoveUntil(context, '/paciente-home', (route) => false);
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Cuenta de paciente creada con éxito'),
+            backgroundColor: AppTheme.secondary,
+          ),
+        );
+
+        Navigator.pushNamedAndRemoveUntil(context, '/paciente-home', (route) => false);
+      } catch (e) {
+        if (!mounted) return;
+        setState(() {
+          _errorMessage = e.toString().replaceAll('Exception: ', '');
+        });
+      } finally {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
@@ -130,6 +149,31 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: theme.textTheme.bodyMedium,
                 ),
                 const SizedBox(height: 24),
+
+                // Error Message Banner
+                if (_errorMessage != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppTheme.error.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: AppTheme.error.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.error_outline, color: AppTheme.error),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _errorMessage!,
+                            style: const TextStyle(color: AppTheme.error, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
 
                 // Nombre
                 TextFormField(
@@ -320,10 +364,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
                 const SizedBox(height: 32),
 
-                // Register Button
                 ElevatedButton(
-                  onPressed: _handleRegister,
-                  child: const Text('Registrarse'),
+                  onPressed: _isLoading ? null : _handleRegister,
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Registrarse'),
                 ),
                 const SizedBox(height: 24),
 
