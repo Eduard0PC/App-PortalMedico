@@ -1,6 +1,9 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using SistemaCitas.API.Common;
+using SistemaCitas.Application;
+using SistemaCitas.Application.Common.Interfaces;
 using SistemaCitas.Infrastructure;
 using SistemaCitas.Infrastructure.Persistence;
 
@@ -8,7 +11,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllers();
+builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 
