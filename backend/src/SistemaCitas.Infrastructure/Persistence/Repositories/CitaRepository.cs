@@ -18,13 +18,17 @@ public sealed class CitaRepository : ICitaRepository
             .FirstOrDefaultAsync(c => c.Id == id, ct);
 
     public async Task<List<Cita>> ListarAsync(
-        int? idPaciente,
-        int? idMedico,
-        DateOnly? fecha,
-        EstadoCita? estado,
-        CancellationToken ct = default)
+    int? idPaciente,
+    int? idMedico,
+    DateOnly? fecha,
+    EstadoCita? estado,
+    CancellationToken ct = default)
     {
-        var query = _context.Citas.AsNoTracking().AsQueryable();
+        var query = _context.Citas
+            .Include(c => c.Medico)
+                .ThenInclude(m => m!.Especialidad)
+            .AsNoTracking()
+            .AsQueryable();
 
         if (idPaciente is not null)
             query = query.Where(c => c.IdPaciente == idPaciente);
