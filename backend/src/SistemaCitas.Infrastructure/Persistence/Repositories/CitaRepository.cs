@@ -15,16 +15,17 @@ public sealed class CitaRepository : ICitaRepository
         await _context.Citas
             .Include(c => c.Paciente)
             .Include(c => c.Medico)
+                .ThenInclude(m => m!.Especialidad)
             .FirstOrDefaultAsync(c => c.Id == id, ct);
-
     public async Task<List<Cita>> ListarAsync(
-    int? idPaciente,
-    int? idMedico,
-    DateOnly? fecha,
-    EstadoCita? estado,
-    CancellationToken ct = default)
+        int? idPaciente,
+        int? idMedico,
+        DateOnly? fecha,
+        EstadoCita? estado,
+        CancellationToken ct = default)
     {
         var query = _context.Citas
+            .Include(c => c.Paciente)
             .Include(c => c.Medico)
                 .ThenInclude(m => m!.Especialidad)
             .AsNoTracking()
@@ -47,9 +48,6 @@ public sealed class CitaRepository : ICitaRepository
             .ThenBy(c => c.HoraInicio)
             .ToListAsync(ct);
     }
-
-    // Usado en Fase 9 para calcular disponibilidad (regla de negocio #1). Solo trae las citas
-    // que realmente ocupan un bloque — una cancelada no bloquea el horario.
     public async Task<List<Cita>> ObtenerPorMedicoYFechaAsync(int idMedico, DateOnly fecha, CancellationToken ct = default) =>
         await _context.Citas
             .Where(c => c.IdMedico == idMedico && c.Fecha == fecha && c.Estado != EstadoCita.Cancelada)
@@ -65,4 +63,7 @@ public sealed class CitaRepository : ICitaRepository
             .ToDictionaryAsync(x => x.Estado, x => x.Cantidad, ct);
 
     public void Agregar(Cita cita) => _context.Citas.Add(cita);
+
+    public void EstablecerVersionEsperada(Cita cita, uint rowVersionEsperado) =>
+        _context.Entry(cita).Property(c => c.RowVersion).OriginalValue = rowVersionEsperado;
 }
