@@ -23,4 +23,8 @@ public interface ICitaRepository
     Task<Dictionary<EstadoCita, int>> ContarPorEstadoAsync(CancellationToken ct = default);
 
     void Agregar(Cita cita);
+
+    void EstablecerVersionEsperada(Cita cita, uint rowVersionEsperado);
+
+
 }

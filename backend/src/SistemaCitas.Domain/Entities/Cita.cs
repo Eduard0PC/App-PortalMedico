@@ -96,4 +96,18 @@ public class Cita
         NotaMedica = notaMedica;
         FechaActualizacion = DateTime.UtcNow;
     }
+
+    public void Reagendar(DateOnly nuevaFecha, TimeOnly nuevaHoraInicio, TimeOnly nuevaHoraFin)
+    {
+        if (Estado != EstadoCita.Programada)
+            throw new ReglaDeNegocioException("Solo se puede reagendar una cita que está programada.");
+
+        if (nuevaHoraFin <= nuevaHoraInicio)
+            throw new ReglaDeNegocioException("La hora de fin debe ser posterior a la hora de inicio.");
+
+        Fecha = nuevaFecha;
+        HoraInicio = nuevaHoraInicio;
+        HoraFin = nuevaHoraFin;
+        FechaActualizacion = DateTime.UtcNow;
+    }
 }
