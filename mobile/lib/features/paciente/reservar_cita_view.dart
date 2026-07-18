@@ -24,6 +24,19 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
   final _reasonController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final appState = AppStateProvider.of(context);
+      if (appState.especialidades.isEmpty) {
+        appState.fetchEspecialidades().catchError((error) {
+          debugPrint('Error en precarga de especialidades: $error');
+        });
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _reasonController.dispose();
     super.dispose();

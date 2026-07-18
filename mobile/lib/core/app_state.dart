@@ -58,44 +58,18 @@ class AppState extends ChangeNotifier {
   }
 
   void _loadSeedData() {
-    // 1. Specialties
-    _especialidades.addAll([
-      const Especialidad(
-        idEspecialidad: 1,
-        nombre: 'Medicina General',
-        descripcion: 'Atención primaria y preventiva para toda la familia.',
-      ),
-      const Especialidad(
-        idEspecialidad: 2,
-        nombre: 'Pediatría',
-        descripcion: 'Cuidado de la salud física y mental de niños y adolescentes.',
-      ),
-      const Especialidad(
-        idEspecialidad: 3,
-        nombre: 'Cardiología',
-        descripcion: 'Diagnóstico y tratamiento de enfermedades cardiovasculares.',
-      ),
-      const Especialidad(
-        idEspecialidad: 4,
-        nombre: 'Dermatología',
-        descripcion: 'Especialistas en la salud y enfermedades de la piel y cabello.',
-      ),
-      const Especialidad(
-        idEspecialidad: 5,
-        nombre: 'Odontología',
-        descripcion: 'Cuidado y salud oral, limpiezas y ortodoncia.',
-      ),
-    ]);
+    // 1. Specialties - Removed to load dynamically from backend GET /api/especialidades
 
     // 2. Medicos
     _medicos.addAll([
       // General Medicine (Dr. Carlos Garcia is the target doctor for doctor login demo)
+      // Note: idEspecialidad updated to 3 to match the backend seeded ID for Medicina General.
       const Medico(
         idMedico: 101,
         nombre: 'Carlos',
         apellido: 'García',
         correo: 'carlos.garcia@clinica.com',
-        idEspecialidad: 1,
+        idEspecialidad: 3,
         telefono: '555-0101',
       ),
       const Medico(
@@ -103,16 +77,16 @@ class AppState extends ChangeNotifier {
         nombre: 'María',
         apellido: 'Fernández',
         correo: 'maria.fernandez@clinica.com',
-        idEspecialidad: 1,
+        idEspecialidad: 3,
         telefono: '555-0102',
       ),
-      // Pediatría
+      // Pediatría (idEspecialidad updated to 1)
       const Medico(
         idMedico: 201,
         nombre: 'Ana',
         apellido: 'Martínez',
         correo: 'ana.martinez@clinica.com',
-        idEspecialidad: 2,
+        idEspecialidad: 1,
         telefono: '555-0201',
       ),
       const Medico(
@@ -120,16 +94,16 @@ class AppState extends ChangeNotifier {
         nombre: 'Luis',
         apellido: 'Torres',
         correo: 'luis.torres@clinica.com',
-        idEspecialidad: 2,
+        idEspecialidad: 1,
         telefono: '555-0202',
       ),
-      // Cardiología
+      // Cardiología (idEspecialidad updated to 2)
       const Medico(
         idMedico: 301,
         nombre: 'Roberto',
         apellido: 'Sánchez',
         correo: 'roberto.sanchez@clinica.com',
-        idEspecialidad: 3,
+        idEspecialidad: 2,
         telefono: '555-0301',
       ),
       // Dermatología
@@ -161,7 +135,11 @@ class AppState extends ChangeNotifier {
       idPaciente: 1,
       nombrePaciente: 'Eduardo García',
       medico: _medicos[0], // Carlos Garcia - General Medicine
-      especialidad: _especialidades[0],
+      especialidad: const Especialidad(
+        idEspecialidad: 3,
+        nombre: 'Medicina General',
+        descripcion: 'Consulta y control de salud general',
+      ),
       fecha: DateTime(yesterday.year, yesterday.month, yesterday.day),
       horaInicio: '09:00',
       horaFin: '09:30',
@@ -177,7 +155,11 @@ class AppState extends ChangeNotifier {
       idPaciente: 1,
       nombrePaciente: 'Eduardo García',
       medico: _medicos[2], // Ana Martinez - Pediatria
-      especialidad: _especialidades[1],
+      especialidad: const Especialidad(
+        idEspecialidad: 1,
+        nombre: 'Pediatría',
+        descripcion: 'Atención médica para niños y adolescentes',
+      ),
       fecha: DateTime(tomorrow.year, tomorrow.month, tomorrow.day),
       horaInicio: '10:30',
       horaFin: '11:00',
@@ -194,7 +176,11 @@ class AppState extends ChangeNotifier {
       idPaciente: 1,
       nombrePaciente: 'Eduardo García',
       medico: _medicos[4], // Roberto Sanchez - Cardiologia
-      especialidad: _especialidades[2],
+      especialidad: const Especialidad(
+        idEspecialidad: 2,
+        nombre: 'Cardiología',
+        descripcion: 'Diagnóstico y tratamiento de enfermedades del corazón',
+      ),
       fecha: DateTime(today.year, today.month, today.day),
       horaInicio: nearCitaHourStr,
       horaFin: nearCitaHourEndStr,
@@ -216,7 +202,11 @@ class AppState extends ChangeNotifier {
       idPaciente: 10,
       nombrePaciente: 'Juan Pérez',
       medico: _medicos[0], // Dr. Carlos García
-      especialidad: _especialidades[0],
+      especialidad: const Especialidad(
+        idEspecialidad: 3,
+        nombre: 'Medicina General',
+        descripcion: 'Consulta y control de salud general',
+      ),
       fecha: monday,
       horaInicio: '09:00',
       horaFin: '09:30',
@@ -231,7 +221,11 @@ class AppState extends ChangeNotifier {
       idPaciente: 11,
       nombrePaciente: 'María López',
       medico: _medicos[0], // Dr. Carlos García
-      especialidad: _especialidades[0],
+      especialidad: const Especialidad(
+        idEspecialidad: 3,
+        nombre: 'Medicina General',
+        descripcion: 'Consulta y control de salud general',
+      ),
       fecha: tuesday,
       horaInicio: '14:30',
       horaFin: '15:00',
@@ -246,7 +240,11 @@ class AppState extends ChangeNotifier {
       idPaciente: 12,
       nombrePaciente: 'Laura Gómez',
       medico: _medicos[0], // Dr. Carlos García
-      especialidad: _especialidades[0],
+      especialidad: const Especialidad(
+        idEspecialidad: 3,
+        nombre: 'Medicina General',
+        descripcion: 'Consulta y control de salud general',
+      ),
       fecha: wednesday,
       horaInicio: '10:00',
       horaFin: '10:30',
@@ -260,7 +258,11 @@ class AppState extends ChangeNotifier {
       idPaciente: 13,
       nombrePaciente: 'Pedro Ruiz',
       medico: _medicos[0], // Dr. Carlos García
-      especialidad: _especialidades[0],
+      especialidad: const Especialidad(
+        idEspecialidad: 3,
+        nombre: 'Medicina General',
+        descripcion: 'Consulta y control de salud general',
+      ),
       fecha: thursday,
       horaInicio: '11:30',
       horaFin: '12:00',
@@ -274,7 +276,11 @@ class AppState extends ChangeNotifier {
       idPaciente: 14,
       nombrePaciente: 'Sofía Rodríguez',
       medico: _medicos[0], // Dr. Carlos García
-      especialidad: _especialidades[0],
+      especialidad: const Especialidad(
+        idEspecialidad: 3,
+        nombre: 'Medicina General',
+        descripcion: 'Consulta y control de salud general',
+      ),
       fecha: friday,
       horaInicio: '16:00',
       horaFin: '16:30',
@@ -298,6 +304,7 @@ class AppState extends ChangeNotifier {
         _currentUserId = 1;
         _userRole = 'Paciente';
         _token = 'demo-token';
+        await fetchEspecialidades();
       }
       notifyListeners();
       return true;
@@ -329,6 +336,7 @@ class AppState extends ChangeNotifier {
         _currentUserName = data['nombreCompleto'];
         _currentUserEmail = data['correo'];
         _userRole = data['rol']; // "Paciente"
+        await fetchEspecialidades();
         notifyListeners();
         return true;
       }
@@ -407,6 +415,7 @@ class AppState extends ChangeNotifier {
         _currentUserName = data['nombreCompleto'];
         _currentUserEmail = data['correo'];
         _userRole = data['rol']; // "Paciente"
+        await fetchEspecialidades();
         notifyListeners();
       } else {
         final data = jsonDecode(response.body);
@@ -428,6 +437,58 @@ class AppState extends ChangeNotifier {
     _currentUserId = null;
     _userRole = null;
     _token = null;
+    _especialidades.clear();
+    notifyListeners();
+  }
+
+  Future<void> fetchEspecialidades() async {
+    if (_token == null || _token == 'demo-token') {
+      _loadFallbackEspecialidades();
+      return;
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('$_backendBaseUrl/api/especialidades'),
+        headers: {
+          'Authorization': 'Bearer $_token',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        _especialidades.clear();
+        _especialidades.addAll(data.map((item) => Especialidad.fromJson(item)).toList());
+        notifyListeners();
+      } else {
+        debugPrint('Error status code fetching specialties: ${response.statusCode}');
+        _loadFallbackEspecialidades();
+      }
+    } catch (e) {
+      debugPrint('Error al conectar con api/especialidades: $e');
+      _loadFallbackEspecialidades();
+    }
+  }
+
+  void _loadFallbackEspecialidades() {
+    if (_especialidades.isNotEmpty) return;
+    _especialidades.addAll([
+      const Especialidad(
+        idEspecialidad: 3,
+        nombre: 'Medicina General',
+        descripcion: 'Consulta y control de salud general',
+      ),
+      const Especialidad(
+        idEspecialidad: 1,
+        nombre: 'Pediatría',
+        descripcion: 'Atención médica para niños y adolescentes',
+      ),
+      const Especialidad(
+        idEspecialidad: 2,
+        nombre: 'Cardiología',
+        descripcion: 'Diagnóstico y tratamiento de enfermedades del corazón',
+      ),
+    ]);
     notifyListeners();
   }
 
