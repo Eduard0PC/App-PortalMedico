@@ -226,6 +226,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 16),
 
+                  /*
                   // Quick Demo Login Buttons (Row of Patient & Doctor)
                   Row(
                     children: [
@@ -261,7 +262,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                     ],
-                  ),
+                  ),*/
                   const SizedBox(height: 32),
 
                   // Register Redirection
