@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../core/theme.dart';
-import '../../../shared/models.dart';
+import '../../../../core/theme.dart';
+import '../../../../shared/models.dart';
 
-class HistoryItem extends StatelessWidget {
+class ItemHistorial extends StatelessWidget {
   final Cita cita;
 
-  const HistoryItem({
+  const ItemHistorial({
     super.key,
     required this.cita,
   });

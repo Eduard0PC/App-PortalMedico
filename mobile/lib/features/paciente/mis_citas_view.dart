@@ -3,7 +3,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import '../../core/app_state.dart';
 import '../../core/theme.dart';
 import '../../shared/models.dart';
-import 'widgets/cita_card.dart';
+import 'widgets/mis_citas/tarjeta_cita.dart';
 
 class MisCitasView extends StatefulWidget {
   const MisCitasView({super.key});
@@ -149,7 +149,7 @@ class _MisCitasViewState extends State<MisCitasView> with SingleTickerProviderSt
       itemCount: list.length,
       itemBuilder: (context, index) {
         final cita = list[index];
-        return CitaCard(cita: cita);
+        return TarjetaCita(cita: cita);
       },
     );
   }

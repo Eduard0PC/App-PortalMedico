@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme.dart';
+import '../../../../core/theme.dart';
 
-class EmptyTile extends StatelessWidget {
+class TarjetaDisponible extends StatelessWidget {
   final String time;
 
-  const EmptyTile({
+  const TarjetaDisponible({
     super.key,
     required this.time,
   });

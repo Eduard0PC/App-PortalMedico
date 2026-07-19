@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../core/theme.dart';
-import '../../../shared/models.dart';
+import '../../../../core/theme.dart';
+import '../../../../shared/models.dart';
 
-class DateTimeStep extends StatelessWidget {
+class PasoFechaHora extends StatelessWidget {
   final Medico selectedDoctor;
   final DateTime selectedDate;
   final String? selectedTimeSlot;
@@ -11,7 +11,7 @@ class DateTimeStep extends StatelessWidget {
   final VoidCallback onSelectDate;
   final ValueChanged<String> onTimeSlotSelected;
 
-  const DateTimeStep({
+  const PasoFechaHora({
     super.key,
     required this.selectedDoctor,
     required this.selectedDate,

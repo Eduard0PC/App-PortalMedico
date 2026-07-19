@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme.dart';
-import '../../../shared/models.dart';
+import '../../../../core/theme.dart';
+import '../../../../shared/models.dart';
 
-class DoctorStep extends StatelessWidget {
+class PasoMedico extends StatelessWidget {
   final List<Medico> filteredDoctors;
   final Especialidad selectedSpecialty;
   final Medico? selectedDoctor;
   final ValueChanged<Medico> onDoctorSelected;
 
-  const DoctorStep({
+  const PasoMedico({
     super.key,
     required this.filteredDoctors,
     required this.selectedSpecialty,

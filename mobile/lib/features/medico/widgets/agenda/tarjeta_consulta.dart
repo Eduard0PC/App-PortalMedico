@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
-import '../../../core/app_state.dart';
-import '../../../core/theme.dart';
-import '../../../shared/models.dart';
+import '../../../../core/app_state.dart';
+import '../../../../core/theme.dart';
+import '../../../../shared/models.dart';
 
-class AppointmentTile extends StatefulWidget {
+class TarjetaConsulta extends StatefulWidget {
   final Cita cita;
 
-  const AppointmentTile({
+  const TarjetaConsulta({
     super.key,
     required this.cita,
   });
 
   @override
-  State<AppointmentTile> createState() => _AppointmentTileState();
+  State<TarjetaConsulta> createState() => _TarjetaConsultaState();
 }
 
-class _AppointmentTileState extends State<AppointmentTile> {
+class _TarjetaConsultaState extends State<TarjetaConsulta> {
   late final TextEditingController _notesController;
 
   @override

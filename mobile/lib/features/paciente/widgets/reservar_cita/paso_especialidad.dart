@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme.dart';
-import '../../../shared/models.dart';
+import '../../../../core/theme.dart';
+import '../../../../shared/models.dart';
 
-class SpecialtyStep extends StatelessWidget {
+class PasoEspecialidad extends StatelessWidget {
   final List<Especialidad> especialidades;
   final Especialidad? selectedSpecialty;
   final ValueChanged<Especialidad> onSpecialtySelected;
 
-  const SpecialtyStep({
+  const PasoEspecialidad({
     super.key,
     required this.especialidades,
     required this.selectedSpecialty,

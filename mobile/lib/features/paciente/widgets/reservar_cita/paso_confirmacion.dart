@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../core/theme.dart';
-import '../../../shared/models.dart';
+import '../../../../core/theme.dart';
+import '../../../../shared/models.dart';
 
-class ConfirmationStep extends StatelessWidget {
+class PasoConfirmacion extends StatelessWidget {
   final Especialidad selectedSpecialty;
   final Medico selectedDoctor;
   final DateTime selectedDate;
   final String selectedTimeSlot;
   final String reasonText;
 
-  const ConfirmationStep({
+  const PasoConfirmacion({
     super.key,
     required this.selectedSpecialty,
     required this.selectedDoctor,

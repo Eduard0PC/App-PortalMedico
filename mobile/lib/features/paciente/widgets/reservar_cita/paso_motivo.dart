@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme.dart';
+import '../../../../core/theme.dart';
 
-class ReasonStep extends StatelessWidget {
+class PasoMotivo extends StatelessWidget {
   final TextEditingController reasonController;
 
-  const ReasonStep({
+  const PasoMotivo({
     super.key,
     required this.reasonController,
   });

@@ -3,8 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../../core/app_state.dart';
 import '../../core/theme.dart';
-import 'widgets/appointment_tile.dart';
-import 'widgets/empty_tile.dart';
+import 'widgets/agenda/tarjeta_consulta.dart';
+import 'widgets/agenda/tarjeta_disponible.dart';
 
 class AgendaView extends StatefulWidget {
   const AgendaView({super.key});
@@ -153,9 +153,9 @@ class _AgendaViewState extends State<AgendaView> {
                 
                 if (appointmentIndex != -1) {
                   final cita = dayCitas[appointmentIndex];
-                  return AppointmentTile(cita: cita);
+                  return TarjetaConsulta(cita: cita);
                 } else {
-                  return EmptyTile(time: slot);
+                  return TarjetaDisponible(time: slot);
                 }
               },
             ),

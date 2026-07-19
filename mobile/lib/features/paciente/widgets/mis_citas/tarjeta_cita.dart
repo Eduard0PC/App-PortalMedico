@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../core/app_state.dart';
-import '../../../core/theme.dart';
-import '../../../shared/models.dart';
+import '../../../../core/app_state.dart';
+import '../../../../core/theme.dart';
+import '../../../../shared/models.dart';
 
-class CitaCard extends StatelessWidget {
+class TarjetaCita extends StatelessWidget {
   final Cita cita;
 
-  const CitaCard({
+  const TarjetaCita({
     super.key,
     required this.cita,
   });

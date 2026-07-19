@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/app_state.dart';
 import '../../core/theme.dart';
-import 'widgets/history_item.dart';
+import 'widgets/historial/item_historial.dart';
 
 class HistorialPacientesView extends StatefulWidget {
   const HistorialPacientesView({super.key});
@@ -192,7 +192,7 @@ class _HistorialPacientesViewState extends State<HistorialPacientesView> {
                               ),
                             ),
                             const SizedBox(height: 8),
-                            ...patientHistory.map((cita) => HistoryItem(cita: cita)),
+                            ...patientHistory.map((cita) => ItemHistorial(cita: cita)),
                           ],
                         ),
                       );

@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import '../../core/app_state.dart';
 import '../../core/theme.dart';
 import '../../shared/models.dart';
-import 'widgets/specialty_step.dart';
-import 'widgets/doctor_step.dart';
-import 'widgets/date_time_step.dart';
-import 'widgets/reason_step.dart';
-import 'widgets/confirmation_step.dart';
+import 'widgets/reservar_cita/paso_especialidad.dart';
+import 'widgets/reservar_cita/paso_medico.dart';
+import 'widgets/reservar_cita/paso_fecha_hora.dart';
+import 'widgets/reservar_cita/paso_motivo.dart';
+import 'widgets/reservar_cita/paso_confirmacion.dart';
 
 class ReservarCitaView extends StatefulWidget {
   final VoidCallback onBookingSuccess;
@@ -341,7 +341,7 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
   Widget _buildStepContent(AppState appState) {
     switch (_currentStep) {
       case 0:
-        return SpecialtyStep(
+        return PasoEspecialidad(
           especialidades: appState.especialidades,
           selectedSpecialty: _selectedSpecialty,
           onSpecialtySelected: (spec) {
@@ -359,7 +359,7 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
         final filteredDoctors = appState.medicos
             .where((doc) => doc.idEspecialidad == _selectedSpecialty?.idEspecialidad && doc.activo)
             .toList();
-        return DoctorStep(
+        return PasoMedico(
           filteredDoctors: filteredDoctors,
           selectedSpecialty: _selectedSpecialty!,
           selectedDoctor: _selectedDoctor,
@@ -375,7 +375,7 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
         );
       case 2:
         final slots = appState.getAvailableSlots(_selectedDoctor!, _selectedDate);
-        return DateTimeStep(
+        return PasoFechaHora(
           selectedDoctor: _selectedDoctor!,
           selectedDate: _selectedDate,
           selectedTimeSlot: _selectedTimeSlot,
@@ -388,11 +388,11 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
           },
         );
       case 3:
-        return ReasonStep(
+        return PasoMotivo(
           reasonController: _reasonController,
         );
       case 4:
-        return ConfirmationStep(
+        return PasoConfirmacion(
           selectedSpecialty: _selectedSpecialty!,
           selectedDoctor: _selectedDoctor!,
           selectedDate: _selectedDate,
