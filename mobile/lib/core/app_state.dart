@@ -289,6 +289,47 @@ class AppState extends ChangeNotifier {
     ));
   }
 
+  dynamic _parseResponseData(String responseBody) {
+    try {
+      final decoded = jsonDecode(responseBody);
+      if (decoded is Map && decoded.containsKey('data') && (decoded.containsKey('success') || decoded.containsKey('message'))) {
+        return decoded['data'] ?? decoded;
+      }
+      return decoded;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String _extractErrorMessage(String responseBody, String defaultMessage) {
+    try {
+      final decoded = jsonDecode(responseBody);
+      if (decoded is Map) {
+        if (decoded['data'] != null && decoded['data'] is Map) {
+          final Map<String, dynamic> fieldErrors = Map<String, dynamic>.from(decoded['data']);
+          final List<String> errorList = [];
+          fieldErrors.forEach((key, value) {
+            if (value is List) {
+              errorList.addAll(value.map((e) => e.toString()));
+            } else if (value != null) {
+              errorList.add(value.toString());
+            }
+          });
+          if (errorList.isNotEmpty) {
+            return errorList.join('\n');
+          }
+        }
+        if (decoded['message'] != null && decoded['message'].toString().isNotEmpty) {
+          return decoded['message'].toString();
+        }
+        if (decoded['detail'] != null && decoded['detail'].toString().isNotEmpty) {
+          return decoded['detail'].toString();
+        }
+      }
+    } catch (_) {}
+    return defaultMessage;
+  }
+
   // Authentication Actions
   Future<bool> login(String email, String password, {bool isDemo = false, String? demoRole}) async {
     if (isDemo) {
@@ -330,9 +371,9 @@ class AppState extends ChangeNotifier {
       ).timeout(const Duration(seconds: 10));
 
       if (pacienteResponse.statusCode == 200) {
-        final data = jsonDecode(pacienteResponse.body);
+        final data = _parseResponseData(pacienteResponse.body);
         _token = data['token'];
-        _currentUserId = data['id'];
+        _currentUserId = (data['id'] as num?)?.toInt() ?? 1;
         _currentUserName = data['nombreCompleto'];
         _currentUserEmail = data['correo'];
         _userRole = data['rol']; // "Paciente"
@@ -355,18 +396,16 @@ class AppState extends ChangeNotifier {
       ).timeout(const Duration(seconds: 10));
 
       if (medicoResponse.statusCode == 200) {
-        final data = jsonDecode(medicoResponse.body);
+        final data = _parseResponseData(medicoResponse.body);
         _token = data['token'];
-        _currentUserId = data['id'];
+        _currentUserId = (data['id'] as num?)?.toInt() ?? 1;
         _currentUserName = data['nombreCompleto'];
         _currentUserEmail = data['correo'];
         _userRole = data['rol']; // "Medico"
         notifyListeners();
         return true;
       } else if (medicoResponse.statusCode == 400 || medicoResponse.statusCode == 401) {
-        final Map<String, dynamic> errorBody = jsonDecode(medicoResponse.body);
-        final String message = errorBody['message'] ?? errorBody['detail'] ?? 'Credenciales incorrectas.';
-        throw AuthException(message);
+        throw AuthException(_extractErrorMessage(medicoResponse.body, 'Credenciales incorrectas.'));
       }
     } on AuthException {
       rethrow;
@@ -411,9 +450,9 @@ class AppState extends ChangeNotifier {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        final data = jsonDecode(response.body);
+        final data = _parseResponseData(response.body);
         _token = data['token'];
-        _currentUserId = data['id'];
+        _currentUserId = (data['id'] as num?)?.toInt() ?? 1;
         _currentUserName = data['nombreCompleto'];
         _currentUserEmail = data['correo'];
         _userRole = data['rol']; // "Paciente"
@@ -422,9 +461,7 @@ class AppState extends ChangeNotifier {
         await fetchCitas();
         notifyListeners();
       } else {
-        final data = jsonDecode(response.body);
-        final errorMsg = data['message'] ?? data['detail'] ?? 'Error al registrar el paciente.';
-        throw AuthException(errorMsg);
+        throw AuthException(_extractErrorMessage(response.body, 'Error al registrar el paciente.'));
       }
     } catch (e) {
       if (e is AuthException) {
@@ -460,10 +497,14 @@ class AppState extends ChangeNotifier {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        _especialidades.clear();
-        _especialidades.addAll(data.map((item) => Especialidad.fromJson(item)).toList());
-        notifyListeners();
+        final data = _parseResponseData(response.body);
+        if (data is List) {
+          _especialidades.clear();
+          _especialidades.addAll(data.map((item) => Especialidad.fromJson(item)).toList());
+          notifyListeners();
+        } else {
+          _loadFallbackEspecialidades();
+        }
       } else {
         debugPrint('Error status code fetching specialties: ${response.statusCode}');
         _loadFallbackEspecialidades();
@@ -512,18 +553,20 @@ class AppState extends ChangeNotifier {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        final fetched = data.map((item) => Medico.fromJson(item)).toList();
-        
-        for (var doc in fetched) {
-          final idx = _medicos.indexWhere((m) => m.idMedico == doc.idMedico);
-          if (idx != -1) {
-            _medicos[idx] = doc;
-          } else {
-            _medicos.add(doc);
+        final data = _parseResponseData(response.body);
+        if (data is List) {
+          final fetched = data.map((item) => Medico.fromJson(item)).toList();
+          
+          for (var doc in fetched) {
+            final idx = _medicos.indexWhere((m) => m.idMedico == doc.idMedico);
+            if (idx != -1) {
+              _medicos[idx] = doc;
+            } else {
+              _medicos.add(doc);
+            }
           }
+          notifyListeners();
         }
-        notifyListeners();
       }
     } catch (e) {
       debugPrint('Error al conectar con api/medicos: $e');
@@ -550,16 +593,18 @@ class AppState extends ChangeNotifier {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        final List<String> slots = [];
-        for (var item in data) {
-          final rawInicio = item['horaInicio'] as String? ?? '';
-          final parts = rawInicio.split(':');
-          if (parts.length >= 2) {
-            slots.add('${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}');
+        final data = _parseResponseData(response.body);
+        if (data is List) {
+          final List<String> slots = [];
+          for (var item in data) {
+            final rawInicio = item['horaInicio'] as String? ?? '';
+            final parts = rawInicio.split(':');
+            if (parts.length >= 2) {
+              slots.add('${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}');
+            }
           }
+          return slots;
         }
-        return slots;
       }
     } catch (e) {
       debugPrint('Error al consultar disponibilidad: $e');
@@ -581,10 +626,12 @@ class AppState extends ChangeNotifier {
       ).timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = jsonDecode(response.body);
-        _citas.clear();
-        _citas.addAll(data.map((item) => Cita.fromJson(item)).toList());
-        notifyListeners();
+        final data = _parseResponseData(response.body);
+        if (data is List) {
+          _citas.clear();
+          _citas.addAll(data.map((item) => Cita.fromJson(item)).toList());
+          notifyListeners();
+        }
       }
     } catch (e) {
       debugPrint('Error al obtener citas: $e');
@@ -623,14 +670,18 @@ class AppState extends ChangeNotifier {
         ).timeout(const Duration(seconds: 10));
 
         if (response.statusCode == 201 || response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          final nuevaCita = Cita.fromJson(data);
-          _citas.add(nuevaCita);
+          final citaData = _parseResponseData(response.body);
+          if (citaData is Map<String, dynamic>) {
+            final nuevaCita = Cita.fromJson(citaData);
+            _citas.add(nuevaCita);
+          } else if (citaData is Map) {
+            final nuevaCita = Cita.fromJson(Map<String, dynamic>.from(citaData));
+            _citas.add(nuevaCita);
+          }
           notifyListeners();
           return true;
         } else {
-          final data = jsonDecode(response.body);
-          final errorMsg = data['message'] ?? data['detail'] ?? 'Error al reservar cita.';
+          final errorMsg = _extractErrorMessage(response.body, 'Error al reservar cita.');
           throw AuthException(errorMsg);
         }
       } catch (e) {
@@ -691,13 +742,16 @@ class AppState extends ChangeNotifier {
         ).timeout(const Duration(seconds: 10));
 
         if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          _citas[index] = Cita.fromJson(data);
+          final citaData = _parseResponseData(response.body);
+          if (citaData is Map<String, dynamic>) {
+            _citas[index] = Cita.fromJson(citaData);
+          } else if (citaData is Map) {
+            _citas[index] = Cita.fromJson(Map<String, dynamic>.from(citaData));
+          }
           notifyListeners();
           return true;
         } else {
-          final data = jsonDecode(response.body);
-          final errorMsg = data['message'] ?? data['detail'] ?? 'No se pudo cancelar la cita.';
+          final errorMsg = _extractErrorMessage(response.body, 'No se pudo cancelar la cita.');
           throw AuthException(errorMsg);
         }
       } catch (e) {

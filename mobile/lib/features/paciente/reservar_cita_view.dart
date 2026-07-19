@@ -20,10 +20,18 @@ class ReservarCitaView extends StatefulWidget {
 class ReservarCitaViewState extends State<ReservarCitaView> {
   int _currentStep = 0;
   
+  static DateTime _getNextWeekday(DateTime date) {
+    var d = date;
+    while (d.weekday == DateTime.saturday || d.weekday == DateTime.sunday) {
+      d = d.add(const Duration(days: 1));
+    }
+    return d;
+  }
+
   // Selection state
   Especialidad? _selectedSpecialty;
   Medico? _selectedDoctor;
-  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1)); // Default to tomorrow
+  DateTime _selectedDate = _getNextWeekday(DateTime.now().add(const Duration(days: 1))); // Default to next weekday
   String? _selectedTimeSlot;
   final _reasonController = TextEditingController();
 
@@ -55,7 +63,7 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
       _currentStep = 0;
       _selectedSpecialty = null;
       _selectedDoctor = null;
-      _selectedDate = DateTime.now().add(const Duration(days: 1));
+      _selectedDate = _getNextWeekday(DateTime.now().add(const Duration(days: 1)));
       _selectedTimeSlot = null;
       _availableSlots = [];
       _isLoadingSlots = false;
@@ -106,9 +114,14 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
 
   Future<void> _selectDate(BuildContext context) async {
     final appState = AppStateProvider.of(context);
+    final DateTime initialCandidate = _selectedDate.isBefore(DateTime.now())
+        ? DateTime.now().add(const Duration(days: 1))
+        : _selectedDate;
+    final DateTime validInitialDate = _getNextWeekday(initialCandidate);
+
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate.isBefore(DateTime.now()) ? DateTime.now().add(const Duration(days: 1)) : _selectedDate,
+      initialDate: validInitialDate,
       firstDate: DateTime.now(), // Can't book past dates
       lastDate: DateTime.now().add(const Duration(days: 30)), // 30 days window
       selectableDayPredicate: (date) {
@@ -128,7 +141,7 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
         );
       },
     );
-    if (picked != null && picked != _selectedDate) {
+    if (picked != null) {
       setState(() {
         _selectedDate = picked;
         _selectedTimeSlot = null; // Reset time slot when date changes

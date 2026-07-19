@@ -11,8 +11,8 @@ class Especialidad {
 
   factory Especialidad.fromJson(Map<String, dynamic> json) {
     return Especialidad(
-      idEspecialidad: json['id'] as int,
-      nombre: json['nombre'] as String,
+      idEspecialidad: (json['id'] as num?)?.toInt() ?? 0,
+      nombre: json['nombre'] as String? ?? '',
       descripcion: json['descripcion'] as String?,
     );
   }
@@ -41,11 +41,11 @@ class Medico {
 
   factory Medico.fromJson(Map<String, dynamic> json) {
     return Medico(
-      idMedico: json['id'] as int,
-      nombre: json['nombre'] as String,
-      apellido: json['apellido'] as String,
-      correo: json['correo'] as String,
-      idEspecialidad: json['idEspecialidad'] as int,
+      idMedico: (json['id'] as num?)?.toInt() ?? 0,
+      nombre: json['nombre'] as String? ?? '',
+      apellido: json['apellido'] as String? ?? '',
+      correo: json['correo'] as String? ?? '',
+      idEspecialidad: (json['idEspecialidad'] as num?)?.toInt() ?? 0,
       telefono: json['telefono'] as String?,
       activo: json['activo'] as bool? ?? true,
     );
@@ -84,19 +84,21 @@ class Cita {
   });
 
   factory Cita.fromJson(Map<String, dynamic> json) {
-    final fechaRaw = json['fecha'] as String;
-    final fechaParsed = DateTime.parse(fechaRaw);
+    final fechaRaw = json['fecha'] as String? ?? DateTime.now().toIso8601String();
+    final fechaParsed = DateTime.tryParse(fechaRaw) ?? DateTime.now();
 
-    String parseHora(String raw) {
-      final parts = raw.split(':');
+    String parseHora(dynamic raw) {
+      if (raw == null) return '00:00';
+      final str = raw.toString();
+      final parts = str.split(':');
       if (parts.length >= 2) {
         return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
       }
-      return raw;
+      return str;
     }
 
-    final horaInicioFormatted = parseHora(json['horaInicio'] as String? ?? '00:00');
-    final horaFinFormatted = parseHora(json['horaFin'] as String? ?? '00:30');
+    final horaInicioFormatted = parseHora(json['horaInicio']);
+    final horaFinFormatted = parseHora(json['horaFin']);
 
     final nombreMedicoStr = json['nombreMedico'] as String? ?? 'Médico';
     final nameParts = nombreMedicoStr.trim().split(' ');
@@ -104,7 +106,7 @@ class Cita {
     final medApellido = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
 
     final medicoObj = Medico(
-      idMedico: json['idMedico'] as int? ?? 0,
+      idMedico: (json['idMedico'] as num?)?.toInt() ?? 0,
       nombre: medNombre,
       apellido: medApellido,
       correo: '',
@@ -117,8 +119,8 @@ class Cita {
     );
 
     return Cita(
-      idCita: json['id'] as int,
-      idPaciente: json['idPaciente'] as int? ?? 0,
+      idCita: (json['id'] as num?)?.toInt() ?? 0,
+      idPaciente: (json['idPaciente'] as num?)?.toInt() ?? 0,
       nombrePaciente: json['nombrePaciente'] as String? ?? 'Paciente',
       medico: medicoObj,
       especialidad: especialidadObj,
