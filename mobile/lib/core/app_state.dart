@@ -524,6 +524,83 @@ class AppState extends ChangeNotifier {
     return _citas.where((c) => c.idPaciente == idPaciente).toList()
       ..sort((a, b) => b.fecha.compareTo(a.fecha));
   }
+
+  // Profile Methods (Paciente & Medico)
+  Future<Paciente?> fetchPacientePerfil(int id) async {
+    if (_token == null) return null;
+
+    try {
+      final response = await http.get(
+        Uri.parse('$_backendBaseUrl/api/pacientes/$id'),
+        headers: {
+          'Authorization': 'Bearer $_token',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final data = _parseResponseData(response.body);
+        if (data is Map<String, dynamic>) {
+          return Paciente.fromJson(data);
+        } else if (data is Map) {
+          return Paciente.fromJson(Map<String, dynamic>.from(data));
+        }
+      }
+    } catch (e) {
+      debugPrint('Error al obtener perfil de paciente: $e');
+    }
+    return null;
+  }
+
+  Future<bool> actualizarPacientePerfil({
+    required int id,
+    required String nombre,
+    required String apellido,
+    String? telefono,
+    DateTime? fechaNacimiento,
+  }) async {
+    if (_token == null) {
+      throw AuthException('Debe iniciar sesión para actualizar el perfil.');
+    }
+
+    final bodyMap = <String, dynamic>{
+      'nombre': nombre.trim(),
+      'apellido': apellido.trim(),
+      'telefono': telefono != null && telefono.trim().isNotEmpty ? telefono.trim() : null,
+    };
+
+    if (fechaNacimiento != null) {
+      final y = fechaNacimiento.year.toString();
+      final m = fechaNacimiento.month.toString().padLeft(2, '0');
+      final d = fechaNacimiento.day.toString().padLeft(2, '0');
+      bodyMap['fechaNacimiento'] = '$y-$m-$d';
+    } else {
+      bodyMap['fechaNacimiento'] = null;
+    }
+
+    try {
+      final response = await http.put(
+        Uri.parse('$_backendBaseUrl/api/pacientes/$id'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_token',
+        },
+        body: jsonEncode(bodyMap),
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        _currentUserName = '${nombre.trim()} ${apellido.trim()}';
+        notifyListeners();
+        return true;
+      } else {
+        final errorMsg = _extractErrorMessage(response.body, 'Error al actualizar perfil de paciente.');
+        throw AuthException(errorMsg);
+      }
+    } catch (e) {
+      if (e is AuthException) rethrow;
+      debugPrint('Error al actualizar perfil paciente: $e');
+      throw AuthException('Error de conexión al actualizar el perfil.');
+    }
+  }
 }
 
 // Inherited Widget Provider to propagate AppState down the tree

@@ -18,12 +18,53 @@ class Especialidad {
   }
 }
 
+class Paciente {
+  final int idPaciente;
+  final String nombre;
+  final String apellido;
+  final String correo;
+  final String? telefono;
+  final DateTime? fechaNacimiento;
+  final DateTime? fechaCreacion;
+
+  const Paciente({
+    required this.idPaciente,
+    required this.nombre,
+    required this.apellido,
+    required this.correo,
+    this.telefono,
+    this.fechaNacimiento,
+    this.fechaCreacion,
+  });
+
+  String get nombreCompleto => '$nombre $apellido';
+
+  factory Paciente.fromJson(Map<String, dynamic> json) {
+    DateTime? parseDate(dynamic raw) {
+      if (raw == null) return null;
+      final str = raw.toString();
+      return DateTime.tryParse(str);
+    }
+
+    return Paciente(
+      idPaciente: (json['id'] as num?)?.toInt() ?? 0,
+      nombre: json['nombre'] as String? ?? '',
+      apellido: json['apellido'] as String? ?? '',
+      correo: json['correo'] as String? ?? '',
+      telefono: json['telefono'] as String?,
+      fechaNacimiento: parseDate(json['fechaNacimiento']),
+      fechaCreacion: parseDate(json['fechaCreacion']),
+    );
+  }
+}
+
 class Medico {
   final int idMedico;
   final String nombre;
   final String apellido;
   final String correo;
   final int idEspecialidad;
+  final String? nombreEspecialidad;
   final String? telefono;
   final bool activo;
 
@@ -33,6 +74,7 @@ class Medico {
     required this.apellido,
     required this.correo,
     required this.idEspecialidad,
+    this.nombreEspecialidad,
     this.telefono,
     this.activo = true,
   });
@@ -46,6 +88,7 @@ class Medico {
       apellido: json['apellido'] as String? ?? '',
       correo: json['correo'] as String? ?? '',
       idEspecialidad: (json['idEspecialidad'] as num?)?.toInt() ?? 0,
+      nombreEspecialidad: json['nombreEspecialidad'] as String?,
       telefono: json['telefono'] as String?,
       activo: json['activo'] as bool? ?? true,
     );

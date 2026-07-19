@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/app_state.dart';
 import '../../core/theme.dart';
+import '../../shared/widgets/editar_perfil_modal.dart';
 import 'mis_citas_view.dart';
 import 'reservar_cita_view.dart';
 
@@ -37,20 +38,42 @@ class _PacienteHomeScreenState extends State<PacienteHomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text(
               'Portal del Paciente',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.textSecondary),
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: AppTheme.textSecondary),
             ),
             Text(
               'Hola, ${appState.currentUserName}',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
         actions: [
+          IconButton(
+            icon: Tooltip(
+              message: 'Editar Perfil',
+              child: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.person_outline_rounded,
+                  color: AppTheme.primary,
+                  size: 22,
+                ),
+              ),
+            ),
+            tooltip: 'Editar Perfil',
+            onPressed: () {
+              EditarPerfilModal.mostrar(context);
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.logout_rounded, color: AppTheme.error),
             tooltip: 'Cerrar Sesión',
