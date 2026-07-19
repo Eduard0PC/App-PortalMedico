@@ -14,8 +14,6 @@ public sealed class AuthorizationBehavior<TRequest, TResponse> : IPipelineBehavi
     public async Task<TResponse> Handle(
         TRequest request, RequestHandlerDelegate<TResponse> next, CancellationToken ct)
     {
-        // Endpoints públicos (login, registro de paciente): no implementan IAuthorizedRequest,
-        // así que no hay nada que verificar acá.
         if (request is not IAuthorizedRequest autorizado)
             return await next();
 
@@ -26,10 +24,6 @@ public sealed class AuthorizationBehavior<TRequest, TResponse> : IPipelineBehavi
             throw new AccesoDenegadoException(
                 $"El rol '{_currentUser.Rol}' no tiene permiso para realizar esta operación.");
 
-        // Chequeo de propiedad del recurso: solo aplica si el usuario actual tiene justo el rol
-        // "dueño" declarado por el request (ej. un Paciente pidiendo "sus" citas). Un
-        // Administrador, o un Médico consultando el historial de un Paciente, ya pasaron el
-        // chequeo de rol de arriba y no quedan sujetos a esta comparación de id.
         if (request is IOwnedRequest propio && _currentUser.Rol == propio.RolPropietario)
         {
             if (propio.IdPropietario != _currentUser.Id)

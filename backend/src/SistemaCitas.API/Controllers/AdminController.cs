@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaCitas.Application.Admin;
 using SistemaCitas.Application.Admin.Queries.ObtenerDashboard;
@@ -13,6 +14,7 @@ public sealed class AdminController : ControllerBase
 
     public AdminController(ISender sender) => _sender = sender;
 
+    [Authorize(Roles = "Administrador")]
     [HttpGet("dashboard")]
     public async Task<ActionResult<DashboardDto>> ObtenerDashboard(CancellationToken ct)
         => Ok(await _sender.Send(new ObtenerDashboardQuery(), ct));

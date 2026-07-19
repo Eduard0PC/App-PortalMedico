@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaCitas.Application.Horarios;
 using SistemaCitas.Application.Horarios.Commands.ActualizarHorario;
@@ -21,10 +22,12 @@ public sealed class HorariosController : ControllerBase
 
     public HorariosController(ISender sender) => _sender = sender;
 
+    [Authorize(Roles = "Medico,Administrador")]
     [HttpGet]
     public async Task<ActionResult<List<HorarioDto>>> Listar(int id, CancellationToken ct)
         => Ok(await _sender.Send(new ListarHorarioDeMedicoQuery(id), ct));
 
+    [Authorize(Roles = "Administrador")]
     [HttpPost]
     public async Task<ActionResult<HorarioDto>> Crear(
         int id, HorarioRequest request, CancellationToken ct)
@@ -35,6 +38,7 @@ public sealed class HorariosController : ControllerBase
         return CreatedAtAction(nameof(Listar), new { id }, resultado);
     }
 
+    [Authorize(Roles = "Administrador")]
     [HttpPut("{idHorario}")]
     public async Task<ActionResult<HorarioDto>> Actualizar(
         int id, int idHorario, HorarioRequest request, CancellationToken ct)
@@ -45,6 +49,7 @@ public sealed class HorariosController : ControllerBase
         return Ok(resultado);
     }
 
+    [Authorize(Roles = "Administrador")]
     [HttpDelete("{idHorario}")]
     public async Task<IActionResult> Eliminar(int id, int idHorario, CancellationToken ct)
     {
@@ -52,6 +57,7 @@ public sealed class HorariosController : ControllerBase
         return NoContent();
     }
 
+    [Authorize(Roles = "Paciente")]
     [HttpGet("/api/medicos/{id}/disponibilidad")]
     public async Task<ActionResult<List<BloqueDisponibleDto>>> Disponibilidad(
         int id, [FromQuery] DateOnly fecha, CancellationToken ct)

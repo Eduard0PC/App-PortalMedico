@@ -9,13 +9,17 @@ using SistemaCitas.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    
+    options.Filters.Add<ApiResponseWrapperFilter>();
+});
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
+builder.Services.AddTransient<GlobalExceptionHandlingMiddleware>();
 
 var jwtSection = builder.Configuration.GetSection("Jwt");
 
@@ -38,12 +42,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("PermitirFlutter", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
+app.UseMiddleware<GlobalExceptionHandlingMiddleware>();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -54,6 +65,26 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseStatusCodePages(async statusCodeContext =>
+{
+    var response = statusCodeContext.HttpContext.Response;
+    if (response.HasStarted)
+        return;
+
+    var mensaje = response.StatusCode switch
+    {
+        StatusCodes.Status401Unauthorized => "Debés autenticarte para realizar esta operación.",
+        StatusCodes.Status403Forbidden => "No tenés permiso para realizar esta operación.",
+        StatusCodes.Status404NotFound => "El recurso solicitado no existe.",
+        _ => "No se pudo completar la operación."
+    };
+
+    response.ContentType = "application/json";
+    await response.WriteAsJsonAsync(ApiResponse.Fail(mensaje));
+});
+
+app.UseCors("PermitirFlutter");
 
 app.UseAuthentication();
 app.UseAuthorization();

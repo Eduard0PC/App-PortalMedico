@@ -40,10 +40,6 @@ public sealed class ReservarCitaCommandHandler : IRequestHandler<ReservarCitaCom
 
         var horaFin = request.HoraInicio.Add(DuracionBloque);
 
-        // Paso 1 de la defensa: misma regla de negocio #1 que ObtenerDisponibilidadQuery (Fase 9),
-        // pero aplicada a un único bloque candidato en vez de enumerar todos los libres. No es
-        // una garantía absoluta por sí sola (ver el comentario debajo) — es la primera línea de
-        // defensa, pensada para el caso normal (nadie más reservando al mismo tiempo).
         var diaSemana = (int)request.Fecha.DayOfWeek;
         if (diaSemana is < 1 or > 5)
             throw new ReglaDeNegocioException("El médico no atiende sábados ni domingos.");
@@ -70,12 +66,6 @@ public sealed class ReservarCitaCommandHandler : IRequestHandler<ReservarCitaCom
         if (yaOcupado)
             throw new ReglaDeNegocioException("El horario solicitado ya no está disponible.");
 
-        // Paso 2 de la defensa, la que realmente importa contra la condición de carrera: se
-        // intenta el Insert igual, sin volver a preguntar. Si otra petición reservó exactamente
-        // este mismo bloque en el instante entre el chequeo de arriba y este SaveChangesAsync, el
-        // índice único filtrado de la Fase 2 rechaza el INSERT con SqlState 23505, y
-        // ApplicationDbContext.SaveChangesAsync (Paso 4 de esta guía) lo traduce a
-        // ConflictoDeConcurrenciaException — nunca un error crudo de PostgreSQL.
         var cita = Cita.Reservar(
             request.IdPaciente, request.IdMedico, request.Fecha, request.HoraInicio, horaFin,
             request.MotivoConsulta);
@@ -83,10 +73,6 @@ public sealed class ReservarCitaCommandHandler : IRequestHandler<ReservarCitaCom
         _citaRepository.Agregar(cita);
         await _unitOfWork.SaveChangesAsync(ct);
 
-        // No se usa CitaDto.DesdeEntidad acá: "cita" se creó en memoria con Cita.Reservar(...),
-        // nunca se leyó de la base, así que cita.Paciente/cita.Medico están en null. Se arma el
-        // DTO a mano con "paciente" y "medico", que ya están cargados (el segundo con su
-        // Especialidad incluida, ver MedicoRepository.ObtenerPorIdAsync de la Fase 2).
         return new CitaDto(
             cita.Id,
             cita.IdPaciente,

@@ -20,10 +20,6 @@ public sealed class ObtenerDashboardQueryHandler
         var citasHoy = await _citaRepository.ContarPorFechaAsync(hoy, ct);
         var conteoPorEstado = await _citaRepository.ContarPorEstadoAsync(ct);
 
-        // ContarPorEstadoAsync (Fase 2) hace un GroupBy sobre las citas existentes: si todavía no
-        // hay ninguna cita "Cancelada" en la base, esa clave directamente no aparece en el
-        // diccionario. Enum.GetValues + GetValueOrDefault asegura que las 3 claves salgan
-        // siempre, con 0 en vez de faltar.
         var citasPorEstado = Enum.GetValues<EstadoCita>()
             .ToDictionary(estado => estado.ToString(), estado => conteoPorEstado.GetValueOrDefault(estado));
 

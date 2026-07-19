@@ -33,9 +33,6 @@ public sealed class CancelarCitaCommandHandler : IRequestHandler<CancelarCitaCom
 
         _citaRepository.EstablecerVersionEsperada(cita, request.RowVersion);
 
-        // La regla de +1 día (regla de negocio #2) vive adentro de este método desde la Fase 1 —
-        // se aplica sola solo cuando canceladaPor == Paciente; un Administrador nunca queda sujeto
-        // a ella (regla de negocio #3).
         cita.Cancelar(canceladaPor, DateTime.UtcNow);
 
         await _unitOfWork.SaveChangesAsync(ct);

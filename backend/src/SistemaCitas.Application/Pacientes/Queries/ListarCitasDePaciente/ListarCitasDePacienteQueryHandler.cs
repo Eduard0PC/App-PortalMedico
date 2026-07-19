@@ -20,9 +20,6 @@ public sealed class ListarCitasDePacienteQueryHandler
     public async Task<List<CitaDelPacienteDto>> Handle(
         ListarCitasDePacienteQuery request, CancellationToken ct)
     {
-        // Chequeo explícito de existencia: sin esto, un id de paciente inexistente devolvería
-        // silenciosamente una lista vacía (200 OK) en vez de un 404 — la misma distinción que ya
-        // hacen ObtenerPacientePorIdQuery (Paso 3) y ActualizarPerfilCommand (Paso 4).
         _ = await _pacienteRepository.ObtenerPorIdAsync(request.Id, ct)
             ?? throw new NotFoundException($"No existe un paciente con id {request.Id}.");
 

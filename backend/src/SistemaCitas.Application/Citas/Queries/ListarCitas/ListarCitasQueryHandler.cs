@@ -21,15 +21,10 @@ public sealed class ListarCitasQueryHandler : IRequestHandler<ListarCitasQuery, 
         var idPacienteFiltro = request.PacienteId;
         var idMedicoFiltro = request.MedicoId;
 
-        // Fuerza el filtro al propio id según el rol — cualquier pacienteId/medicoId que el
-        // cliente haya mandado para "otro" id queda pisado acá, nunca genera un error: la
-        // respuesta simplemente vuelve filtrada a lo que le corresponde a quien pregunta.
         if (_currentUser.Rol == "Paciente")
             idPacienteFiltro = _currentUser.Id;
         else if (_currentUser.Rol == "Medico")
             idMedicoFiltro = _currentUser.Id;
-
-        // Administrador: usa pacienteId/medicoId tal cual vinieron (o ninguno de los dos => todas).
 
         EstadoCita? estadoFiltro = request.Estado is not null
             ? Enum.Parse<EstadoCita>(request.Estado, ignoreCase: true)

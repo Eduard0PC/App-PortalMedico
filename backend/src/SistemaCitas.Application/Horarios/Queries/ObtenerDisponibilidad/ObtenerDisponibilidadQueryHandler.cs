@@ -29,8 +29,6 @@ public sealed class ObtenerDisponibilidadQueryHandler
         _ = await _medicoRepository.ObtenerPorIdAsync(request.IdMedico, ct)
             ?? throw new NotFoundException($"No existe un médico con id {request.IdMedico}.");
 
-        // DayOfWeek de .NET: Sunday=0 ... Saturday=6. HorarioMedico.DiaSemana: 1=Lunes ... 5=Viernes
-        // (Fase 1). Coinciden numéricamente de Lunes a Viernes; sábado y domingo caen fuera de 1-5.
         var diaSemana = (int)request.Fecha.DayOfWeek;
 
         if (diaSemana is < 1 or > 5)
@@ -42,8 +40,6 @@ public sealed class ObtenerDisponibilidadQueryHandler
         if (horariosDelDia.Count == 0)
             return new List<BloqueDisponibleDto>();
 
-        // Ya viene filtrado a Estado <> Cancelada por CitaRepository (Fase 2) — no hace falta
-        // volver a filtrar acá.
         var citasDelDia = await _citaRepository.ObtenerPorMedicoYFechaAsync(
             request.IdMedico, request.Fecha, ct);
 

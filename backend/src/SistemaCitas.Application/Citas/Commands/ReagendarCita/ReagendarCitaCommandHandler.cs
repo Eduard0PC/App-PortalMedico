@@ -46,8 +46,6 @@ public sealed class ReagendarCitaCommandHandler : IRequestHandler<ReagendarCitaC
             throw new ReglaDeNegocioException(
                 "El nuevo horario no coincide con un bloque válido de 30 minutos.");
 
-        // Excluye la propia cita (request.Id) de la comparación — si no, reagendar dentro del
-        // mismo día "chocaría" siempre contra su propio bloque anterior.
         var citasDelDia = (await _citaRepository.ObtenerPorMedicoYFechaAsync(cita.IdMedico, request.Fecha, ct))
             .Where(c => c.Id != cita.Id);
 

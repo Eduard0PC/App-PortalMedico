@@ -27,8 +27,6 @@ public sealed class ObtenerCitaPorIdQueryHandler : IRequestHandler<ObtenerCitaPo
         if (_currentUser.Rol == "Medico" && cita.IdMedico != _currentUser.Id)
             throw new AccesoDenegadoException("No puedes acceder a una cita que no es tuya.");
 
-        // Administrador: sin restricción adicional, ya pasó el chequeo de rol de AuthorizationBehavior.
-
         return CitaDto.DesdeEntidad(cita);
     }
 }

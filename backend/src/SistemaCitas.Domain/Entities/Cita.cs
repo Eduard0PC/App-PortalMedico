@@ -37,11 +37,6 @@ public class Cita
         FechaActualizacion = DateTime.UtcNow;
     }
 
-    /// <summary>
-    /// Crea una cita nueva en estado Programada. La validación de disponibilidad del bloque
-    /// (regla de negocio #1) se hace antes de llegar acá, en el Handler de Application
-    /// (Fase 10), porque necesita consultar el repositorio — no es responsabilidad de la entidad.
-    /// </summary>
     public static Cita Reservar(
         int idPaciente,
         int idMedico,
@@ -59,10 +54,6 @@ public class Cita
         return new Cita(idPaciente, idMedico, fecha, horaInicio, horaFin, motivoConsulta);
     }
 
-    /// <summary>
-    /// Regla de negocio #2 y #3: un paciente solo puede cancelar con más de 1 día de
-    /// anticipación; un administrador puede cancelar sin esa restricción.
-    /// </summary>
     public void Cancelar(CanceladoPor canceladaPor, DateTime ahora)
     {
         if (Estado == EstadoCita.Cancelada)

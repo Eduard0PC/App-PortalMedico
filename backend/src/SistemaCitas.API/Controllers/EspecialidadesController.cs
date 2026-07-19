@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaCitas.Application.Especialidades;
 using SistemaCitas.Application.Especialidades.Commands.ActualizarEspecialidad;
@@ -20,10 +21,12 @@ public sealed class EspecialidadesController : ControllerBase
 
     public EspecialidadesController(ISender sender) => _sender = sender;
 
+    [Authorize(Roles = "Paciente,Administrador")]
     [HttpGet]
     public async Task<ActionResult<List<EspecialidadDto>>> Listar(CancellationToken ct)
         => Ok(await _sender.Send(new ListarEspecialidadesQuery(), ct));
 
+    [Authorize(Roles = "Administrador")]
     [HttpPost]
     public async Task<ActionResult<EspecialidadDto>> Crear(
         CrearEspecialidadCommand command, CancellationToken ct)
@@ -32,6 +35,7 @@ public sealed class EspecialidadesController : ControllerBase
         return CreatedAtAction(nameof(Crear), resultado);
     }
 
+    [Authorize(Roles = "Administrador")]
     [HttpPut("{id}")]
     public async Task<ActionResult<EspecialidadDto>> Actualizar(
         int id, ActualizarEspecialidadRequest request, CancellationToken ct)
@@ -41,6 +45,7 @@ public sealed class EspecialidadesController : ControllerBase
         return Ok(resultado);
     }
 
+    [Authorize(Roles = "Administrador")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Eliminar(int id, CancellationToken ct)
     {

@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SistemaCitas.Application.Citas;
 using SistemaCitas.Application.Citas.Commands.AtenderCita;
@@ -11,7 +12,7 @@ using SistemaCitas.Application.Common.Interfaces;
 
 namespace SistemaCitas.API.Controllers;
 
-/// <summary>Body de POST /api/citas: sin idPaciente — se toma del token (ver Paso 7 de la Fase 10).</summary>
+/// <summary>Body de POST /api/citas: sin idPaciente — se toma del token.</summary>
 public sealed record ReservarCitaRequest(int IdMedico, DateOnly Fecha, TimeOnly HoraInicio, string MotivoConsulta);
 
 /// <summary>Body de PATCH /api/citas/{id}/atender.</summary>
@@ -36,6 +37,7 @@ public sealed class CitasController : ControllerBase
         _currentUser = currentUser;
     }
 
+    [Authorize(Roles = "Paciente")]
     [HttpPost]
     public async Task<ActionResult<CitaDto>> Reservar(ReservarCitaRequest request, CancellationToken ct)
     {
@@ -45,6 +47,7 @@ public sealed class CitasController : ControllerBase
         return CreatedAtAction(nameof(ObtenerPorId), new { id = resultado.Id }, resultado);
     }
 
+    [Authorize(Roles = "Paciente,Medico,Administrador")]
     [HttpGet]
     public async Task<ActionResult<List<CitaDto>>> Listar(
         [FromQuery] int? pacienteId,
@@ -54,10 +57,12 @@ public sealed class CitasController : ControllerBase
         CancellationToken ct)
         => Ok(await _sender.Send(new ListarCitasQuery(pacienteId, medicoId, fecha, estado), ct));
 
+    [Authorize(Roles = "Paciente,Medico,Administrador")]
     [HttpGet("{id}")]
     public async Task<ActionResult<CitaDto>> ObtenerPorId(int id, CancellationToken ct)
         => Ok(await _sender.Send(new ObtenerCitaPorIdQuery(id), ct));
 
+    [Authorize(Roles = "Medico")]
     [HttpPatch("{id}/atender")]
     public async Task<ActionResult<CitaDto>> Atender(int id, AtenderCitaRequest request, CancellationToken ct)
     {
@@ -65,6 +70,7 @@ public sealed class CitasController : ControllerBase
         return Ok(await _sender.Send(command, ct));
     }
 
+    [Authorize(Roles = "Paciente,Administrador")]
     [HttpPatch("{id}/cancelar")]
     public async Task<ActionResult<CitaDto>> Cancelar(int id, CancelarCitaRequest request, CancellationToken ct)
     {
@@ -72,6 +78,7 @@ public sealed class CitasController : ControllerBase
         return Ok(await _sender.Send(command, ct));
     }
 
+    [Authorize(Roles = "Administrador")]
     [HttpPatch("{id}/reagendar")]
     public async Task<ActionResult<CitaDto>> Reagendar(int id, ReagendarCitaRequest request, CancellationToken ct)
     {

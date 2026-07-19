@@ -7,7 +7,7 @@ public class HorarioMedico
     public int Id { get; private set; }
     public int IdMedico { get; private set; }
     public Medico? Medico { get; private set; }
-    public int DiaSemana { get; private set; } // 1 = Lunes ... 5 = Viernes
+    public int DiaSemana { get; private set; }
     public TimeOnly HoraInicio { get; private set; }
     public TimeOnly HoraFin { get; private set; }
 
