@@ -27,6 +27,10 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
   String? _selectedTimeSlot;
   final _reasonController = TextEditingController();
 
+  List<String> _availableSlots = [];
+  bool _isLoadingSlots = false;
+  bool _isSubmitting = false;
+
   @override
   void initState() {
     super.initState();
@@ -53,6 +57,9 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
       _selectedDoctor = null;
       _selectedDate = DateTime.now().add(const Duration(days: 1));
       _selectedTimeSlot = null;
+      _availableSlots = [];
+      _isLoadingSlots = false;
+      _isSubmitting = false;
       _reasonController.clear();
     });
   }
@@ -73,7 +80,32 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
     }
   }
 
+  Future<void> _loadAvailableSlots(AppState appState) async {
+    if (_selectedDoctor == null) return;
+    setState(() {
+      _isLoadingSlots = true;
+      _selectedTimeSlot = null;
+    });
+    try {
+      final slots = await appState.fetchDisponibilidad(_selectedDoctor!.idMedico, _selectedDate);
+      if (mounted) {
+        setState(() {
+          _availableSlots = slots;
+          _isLoadingSlots = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _availableSlots = [];
+          _isLoadingSlots = false;
+        });
+      }
+    }
+  }
+
   Future<void> _selectDate(BuildContext context) async {
+    final appState = AppStateProvider.of(context);
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate.isBefore(DateTime.now()) ? DateTime.now().add(const Duration(days: 1)) : _selectedDate,
@@ -101,76 +133,100 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
         _selectedDate = picked;
         _selectedTimeSlot = null; // Reset time slot when date changes
       });
+      await _loadAvailableSlots(appState);
     }
   }
 
-  void _confirmBooking() {
+  Future<void> _confirmBooking() async {
     if (_selectedDoctor == null || _selectedSpecialty == null || _selectedTimeSlot == null) {
       return;
     }
 
-    final appState = AppStateProvider.of(context);
-    appState.reservarCita(
-      medico: _selectedDoctor!,
-      especialidad: _selectedSpecialty!,
-      fecha: _selectedDate,
-      horaInicio: _selectedTimeSlot!,
-      motivo: _reasonController.text.trim().isEmpty ? 'Consulta General' : _reasonController.text.trim(),
-    );
+    setState(() {
+      _isSubmitting = true;
+    });
 
-    // Show Success Dialog / Animation
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: const BoxDecoration(
-                color: AppTheme.primaryLight,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.check_circle_rounded,
-                color: AppTheme.secondary,
-                size: 64,
-              ),
+    final appState = AppStateProvider.of(context);
+    try {
+      final success = await appState.reservarCita(
+        medico: _selectedDoctor!,
+        especialidad: _selectedSpecialty!,
+        fecha: _selectedDate,
+        horaInicio: _selectedTimeSlot!,
+        motivo: _reasonController.text.trim().isEmpty ? 'Consulta General' : _reasonController.text.trim(),
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+      });
+
+      if (success) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: const BoxDecoration(
+                    color: AppTheme.primaryLight,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_circle_rounded,
+                    color: AppTheme.secondary,
+                    size: 64,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  '¡Cita Reservada!',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Tu cita ha sido programada exitosamente. Puedes revisarla y gestionarla en la sección de Mis Citas.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context); // Dismiss dialog
+                      resetStepper();
+                      widget.onBookingSuccess(); // Navigate to tab 1
+                    },
+                    child: const Text('Entendido'),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-            const Text(
-              '¡Cita Reservada!',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Tu cita ha sido programada exitosamente. Puedes revisarla y gestionarla en la sección de Mis Citas.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context); // Dismiss dialog
-                  resetStepper();
-                  widget.onBookingSuccess(); // Navigate to tab 1
-                },
-                child: const Text('Entendido'),
-              ),
-            ),
-          ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceAll('AuthException: ', '')),
+          backgroundColor: AppTheme.error,
         ),
-      ),
-    );
+      );
+    }
   }
 
   @override
@@ -274,7 +330,7 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
                 children: [
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: _prevStep,
+                      onPressed: _isSubmitting ? null : _prevStep,
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         side: const BorderSide(color: AppTheme.primary),
@@ -294,23 +350,29 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: _isNextStepEnabled()
+                      onPressed: (_isNextStepEnabled() && !_isSubmitting)
                           ? (_currentStep == 4 ? _confirmBooking : _nextStep)
                           : null,
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 14),
                       ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(_currentStep == 4 ? 'Confirmar Cita' : 'Continuar'),
-                          const SizedBox(width: 8),
-                          Icon(
-                            _currentStep == 4 ? Icons.done_all : Icons.arrow_forward_ios_rounded,
-                            size: 16,
-                          ),
-                        ],
-                      ),
+                      child: _isSubmitting
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                            )
+                          : Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(_currentStep == 4 ? 'Confirmar Cita' : 'Continuar'),
+                                const SizedBox(width: 8),
+                                Icon(
+                                  _currentStep == 4 ? Icons.done_all : Icons.arrow_forward_ios_rounded,
+                                  size: 16,
+                                ),
+                              ],
+                            ),
                     ),
                   ),
                 ],
@@ -350,8 +412,10 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
                 _selectedSpecialty = spec;
                 _selectedDoctor = null; // Reset doctor selection
                 _selectedTimeSlot = null; // Reset slot
+                _availableSlots = [];
               }
             });
+            appState.fetchMedicos(especialidadId: spec.idEspecialidad);
             _nextStep(); // Auto-advance to next step
           },
         );
@@ -370,16 +434,17 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
                 _selectedTimeSlot = null; // Reset slot
               }
             });
+            _loadAvailableSlots(appState);
             _nextStep();
           },
         );
       case 2:
-        final slots = appState.getAvailableSlots(_selectedDoctor!, _selectedDate);
         return PasoFechaHora(
           selectedDoctor: _selectedDoctor!,
           selectedDate: _selectedDate,
           selectedTimeSlot: _selectedTimeSlot,
-          availableSlots: slots,
+          availableSlots: _availableSlots,
+          isLoading: _isLoadingSlots,
           onSelectDate: () => _selectDate(context),
           onTimeSlotSelected: (slot) {
             setState(() {

@@ -8,6 +8,7 @@ class PasoFechaHora extends StatelessWidget {
   final DateTime selectedDate;
   final String? selectedTimeSlot;
   final List<String> availableSlots;
+  final bool isLoading;
   final VoidCallback onSelectDate;
   final ValueChanged<String> onTimeSlotSelected;
 
@@ -17,6 +18,7 @@ class PasoFechaHora extends StatelessWidget {
     required this.selectedDate,
     required this.selectedTimeSlot,
     required this.availableSlots,
+    this.isLoading = false,
     required this.onSelectDate,
     required this.onTimeSlotSelected,
   });
@@ -84,7 +86,14 @@ class PasoFechaHora extends StatelessWidget {
           style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
         ),
         const SizedBox(height: 16),
-        if (availableSlots.isEmpty)
+        if (isLoading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 32),
+            child: Center(
+              child: CircularProgressIndicator(),
+            ),
+          )
+        else if (availableSlots.isEmpty)
           Container(
             padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
             decoration: BoxDecoration(

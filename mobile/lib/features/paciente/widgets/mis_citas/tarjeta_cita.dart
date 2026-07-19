@@ -35,16 +35,27 @@ class TarjetaCita extends StatelessWidget {
               child: const Text('No, conservar'),
             ),
             TextButton(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(context); // Dismiss dialog
-                final success = appState.cancelarCita(cita.idCita);
-                if (success) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Cita cancelada con éxito.'),
-                      backgroundColor: AppTheme.secondary,
-                    ),
-                  );
+                try {
+                  final success = await appState.cancelarCita(cita.idCita);
+                  if (context.mounted && success) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Cita cancelada con éxito.'),
+                        backgroundColor: AppTheme.secondary,
+                      ),
+                    );
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(e.toString().replaceAll('AuthException: ', '')),
+                        backgroundColor: AppTheme.error,
+                      ),
+                    );
+                  }
                 }
               },
               style: TextButton.styleFrom(foregroundColor: AppTheme.error),

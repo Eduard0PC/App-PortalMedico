@@ -38,6 +38,18 @@ class Medico {
   });
 
   String get nombreCompleto => 'Dr. $nombre $apellido';
+
+  factory Medico.fromJson(Map<String, dynamic> json) {
+    return Medico(
+      idMedico: json['id'] as int,
+      nombre: json['nombre'] as String,
+      apellido: json['apellido'] as String,
+      correo: json['correo'] as String,
+      idEspecialidad: json['idEspecialidad'] as int,
+      telefono: json['telefono'] as String?,
+      activo: json['activo'] as bool? ?? true,
+    );
+  }
 }
 
 class Cita {
@@ -53,6 +65,7 @@ class Cita {
   final String estado; // 'Programada', 'Atendida', 'Cancelada'
   final String? notaMedica;
   final String? canceladaPor; // 'Paciente', 'Administrador'
+  final int rowVersion;
 
   const Cita({
     required this.idCita,
@@ -67,7 +80,58 @@ class Cita {
     required this.estado,
     this.notaMedica,
     this.canceladaPor,
+    this.rowVersion = 0,
   });
+
+  factory Cita.fromJson(Map<String, dynamic> json) {
+    final fechaRaw = json['fecha'] as String;
+    final fechaParsed = DateTime.parse(fechaRaw);
+
+    String parseHora(String raw) {
+      final parts = raw.split(':');
+      if (parts.length >= 2) {
+        return '${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}';
+      }
+      return raw;
+    }
+
+    final horaInicioFormatted = parseHora(json['horaInicio'] as String? ?? '00:00');
+    final horaFinFormatted = parseHora(json['horaFin'] as String? ?? '00:30');
+
+    final nombreMedicoStr = json['nombreMedico'] as String? ?? 'Médico';
+    final nameParts = nombreMedicoStr.trim().split(' ');
+    final medNombre = nameParts.isNotEmpty ? nameParts.first : 'Médico';
+    final medApellido = nameParts.length > 1 ? nameParts.sublist(1).join(' ') : '';
+
+    final medicoObj = Medico(
+      idMedico: json['idMedico'] as int? ?? 0,
+      nombre: medNombre,
+      apellido: medApellido,
+      correo: '',
+      idEspecialidad: 0,
+    );
+
+    final especialidadObj = Especialidad(
+      idEspecialidad: 0,
+      nombre: json['nombreEspecialidad'] as String? ?? 'Especialidad',
+    );
+
+    return Cita(
+      idCita: json['id'] as int,
+      idPaciente: json['idPaciente'] as int? ?? 0,
+      nombrePaciente: json['nombrePaciente'] as String? ?? 'Paciente',
+      medico: medicoObj,
+      especialidad: especialidadObj,
+      fecha: DateTime(fechaParsed.year, fechaParsed.month, fechaParsed.day),
+      horaInicio: horaInicioFormatted,
+      horaFin: horaFinFormatted,
+      motivoConsulta: json['motivoConsulta'] as String? ?? '',
+      estado: json['estado'] as String? ?? 'Programada',
+      notaMedica: json['notaMedica'] as String?,
+      canceladaPor: json['canceladaPor'] as String?,
+      rowVersion: (json['rowVersion'] as num?)?.toInt() ?? 0,
+    );
+  }
 
   Cita copyWith({
     int? idCita,
@@ -82,6 +146,7 @@ class Cita {
     String? estado,
     String? notaMedica,
     String? canceladaPor,
+    int? rowVersion,
   }) {
     return Cita(
       idCita: idCita ?? this.idCita,
@@ -96,6 +161,7 @@ class Cita {
       estado: estado ?? this.estado,
       notaMedica: notaMedica ?? this.notaMedica,
       canceladaPor: canceladaPor ?? this.canceladaPor,
+      rowVersion: rowVersion ?? this.rowVersion,
     );
   }
 
@@ -105,7 +171,7 @@ class Cita {
     
     // Parse time components
     final parts = horaInicio.split(':');
-    if (parts.length != 2) return false;
+    if (parts.length < 2) return false;
     final hours = int.tryParse(parts[0]) ?? 0;
     final minutes = int.tryParse(parts[1]) ?? 0;
 

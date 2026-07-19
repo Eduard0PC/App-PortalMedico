@@ -337,6 +337,8 @@ class AppState extends ChangeNotifier {
         _currentUserEmail = data['correo'];
         _userRole = data['rol']; // "Paciente"
         await fetchEspecialidades();
+        await fetchMedicos();
+        await fetchCitas();
         notifyListeners();
         return true;
       }
@@ -416,6 +418,8 @@ class AppState extends ChangeNotifier {
         _currentUserEmail = data['correo'];
         _userRole = data['rol']; // "Paciente"
         await fetchEspecialidades();
+        await fetchMedicos();
+        await fetchCitas();
         notifyListeners();
       } else {
         final data = jsonDecode(response.body);
@@ -492,19 +496,154 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> fetchMedicos({int? especialidadId}) async {
+    if (_token == null || _token == 'demo-token') return;
+
+    try {
+      final uri = especialidadId != null
+          ? Uri.parse('$_backendBaseUrl/api/medicos?especialidadId=$especialidadId')
+          : Uri.parse('$_backendBaseUrl/api/medicos');
+
+      final response = await http.get(
+        uri,
+        headers: {
+          'Authorization': 'Bearer $_token',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        final fetched = data.map((item) => Medico.fromJson(item)).toList();
+        
+        for (var doc in fetched) {
+          final idx = _medicos.indexWhere((m) => m.idMedico == doc.idMedico);
+          if (idx != -1) {
+            _medicos[idx] = doc;
+          } else {
+            _medicos.add(doc);
+          }
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error al conectar con api/medicos: $e');
+    }
+  }
+
+  Future<List<String>> fetchDisponibilidad(int idMedico, DateTime fecha) async {
+    final year = fecha.year.toString();
+    final month = fecha.month.toString().padLeft(2, '0');
+    final day = fecha.day.toString().padLeft(2, '0');
+    final fechaStr = '$year-$month-$day';
+
+    if (_token == null || _token == 'demo-token') {
+      final medico = _medicos.firstWhere((m) => m.idMedico == idMedico, orElse: () => _medicos.first);
+      return getAvailableSlots(medico, fecha);
+    }
+
+    try {
+      final response = await http.get(
+        Uri.parse('$_backendBaseUrl/api/medicos/$idMedico/disponibilidad?fecha=$fechaStr'),
+        headers: {
+          'Authorization': 'Bearer $_token',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        final List<String> slots = [];
+        for (var item in data) {
+          final rawInicio = item['horaInicio'] as String? ?? '';
+          final parts = rawInicio.split(':');
+          if (parts.length >= 2) {
+            slots.add('${parts[0].padLeft(2, '0')}:${parts[1].padLeft(2, '0')}');
+          }
+        }
+        return slots;
+      }
+    } catch (e) {
+      debugPrint('Error al consultar disponibilidad: $e');
+    }
+
+    final medico = _medicos.firstWhere((m) => m.idMedico == idMedico, orElse: () => _medicos.first);
+    return getAvailableSlots(medico, fecha);
+  }
+
+  Future<void> fetchCitas() async {
+    if (_token == null || _token == 'demo-token') return;
+
+    try {
+      final response = await http.get(
+        Uri.parse('$_backendBaseUrl/api/citas'),
+        headers: {
+          'Authorization': 'Bearer $_token',
+        },
+      ).timeout(const Duration(seconds: 10));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        _citas.clear();
+        _citas.addAll(data.map((item) => Cita.fromJson(item)).toList());
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('Error al obtener citas: $e');
+    }
+  }
+
   // Appointment Actions
-  void reservarCita({
+  Future<bool> reservarCita({
     required Medico medico,
     required Especialidad especialidad,
     required DateTime fecha,
     required String horaInicio,
     required String motivo,
-  }) {
-    // Calculate horaFin (horaInicio + 30 min)
+  }) async {
+    final year = fecha.year.toString();
+    final month = fecha.month.toString().padLeft(2, '0');
+    final day = fecha.day.toString().padLeft(2, '0');
+    final fechaStr = '$year-$month-$day';
+
+    final horaInicioBackend = horaInicio.length == 5 ? '$horaInicio:00' : horaInicio;
+
+    if (_token != null && _token != 'demo-token') {
+      try {
+        final response = await http.post(
+          Uri.parse('$_backendBaseUrl/api/citas'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $_token',
+          },
+          body: jsonEncode({
+            'idMedico': medico.idMedico,
+            'fecha': fechaStr,
+            'horaInicio': horaInicioBackend,
+            'motivoConsulta': motivo,
+          }),
+        ).timeout(const Duration(seconds: 10));
+
+        if (response.statusCode == 201 || response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final nuevaCita = Cita.fromJson(data);
+          _citas.add(nuevaCita);
+          notifyListeners();
+          return true;
+        } else {
+          final data = jsonDecode(response.body);
+          final errorMsg = data['message'] ?? data['detail'] ?? 'Error al reservar cita.';
+          throw AuthException(errorMsg);
+        }
+      } catch (e) {
+        if (e is AuthException) rethrow;
+        debugPrint('Error al conectar con POST /api/citas: $e');
+        throw AuthException('No se pudo conectar con el servidor.');
+      }
+    }
+
+    // Fallback demo
     final parts = horaInicio.split(':');
     final hour = int.parse(parts[0]);
     final min = int.parse(parts[1]);
-    
     var endMin = min + 30;
     var endHour = hour;
     if (endMin >= 60) {
@@ -528,22 +667,52 @@ class AppState extends ChangeNotifier {
 
     _citas.add(nuevaCita);
     notifyListeners();
+    return true;
   }
 
-  bool cancelarCita(int idCita) {
+  Future<bool> cancelarCita(int idCita) async {
     final index = _citas.indexWhere((c) => c.idCita == idCita);
-    if (index != -1) {
-      final cita = _citas[index];
-      if (cita.esCancelable) {
-        _citas[index] = cita.copyWith(
-          estado: 'Cancelada',
-          canceladaPor: 'Paciente',
-        );
-        notifyListeners();
-        return true;
+    if (index == -1) return false;
+
+    final cita = _citas[index];
+    if (!cita.esCancelable) return false;
+
+    if (_token != null && _token != 'demo-token') {
+      try {
+        final response = await http.patch(
+          Uri.parse('$_backendBaseUrl/api/citas/$idCita/cancelar'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $_token',
+          },
+          body: jsonEncode({
+            'rowVersion': cita.rowVersion,
+          }),
+        ).timeout(const Duration(seconds: 10));
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          _citas[index] = Cita.fromJson(data);
+          notifyListeners();
+          return true;
+        } else {
+          final data = jsonDecode(response.body);
+          final errorMsg = data['message'] ?? data['detail'] ?? 'No se pudo cancelar la cita.';
+          throw AuthException(errorMsg);
+        }
+      } catch (e) {
+        if (e is AuthException) rethrow;
+        debugPrint('Error al cancelar cita: $e');
+        throw AuthException('Error de conexión al cancelar la cita.');
       }
     }
-    return false;
+
+    _citas[index] = cita.copyWith(
+      estado: 'Cancelada',
+      canceladaPor: 'Paciente',
+    );
+    notifyListeners();
+    return true;
   }
 
   // Doctor Action
