@@ -8,6 +8,14 @@ class Especialidad {
     required this.nombre,
     this.descripcion,
   });
+
+  factory Especialidad.fromJson(Map<String, dynamic> json) {
+    return Especialidad(
+      idEspecialidad: json['id'] as int,
+      nombre: json['nombre'] as String,
+      descripcion: json['descripcion'] as String?,
+    );
+  }
 }
 
 class Medico {
