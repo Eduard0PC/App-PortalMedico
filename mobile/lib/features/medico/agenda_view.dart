@@ -36,11 +36,12 @@ class _AgendaViewState extends State<AgendaView> {
     } else {
       _selectedDay = todayOnly;
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final appState = AppStateProvider.of(context);
+      appState.fetchCitas();
+    });
   }
-
-
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -142,22 +143,26 @@ class _AgendaViewState extends State<AgendaView> {
 
           // Scrollable Timeline Slots list
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              itemCount: baseSlots.length,
-              itemBuilder: (context, index) {
-                final slot = baseSlots[index];
-                
-                // Check if doctor has an appointment starting in this slot
-                final appointmentIndex = dayCitas.indexWhere((c) => c.horaInicio == slot && c.estado != 'Cancelada');
-                
-                if (appointmentIndex != -1) {
-                  final cita = dayCitas[appointmentIndex];
-                  return TarjetaConsulta(cita: cita);
-                } else {
-                  return TarjetaDisponible(time: slot);
-                }
-              },
+            child: RefreshIndicator(
+              onRefresh: () => appState.fetchCitas(),
+              child: ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                itemCount: baseSlots.length,
+                itemBuilder: (context, index) {
+                  final slot = baseSlots[index];
+                  
+                  // Check if doctor has an appointment starting in this slot
+                  final appointmentIndex = dayCitas.indexWhere((c) => c.horaInicio == slot && c.estado != 'Cancelada');
+                  
+                  if (appointmentIndex != -1) {
+                    final cita = dayCitas[appointmentIndex];
+                    return TarjetaConsulta(cita: cita);
+                  } else {
+                    return TarjetaDisponible(time: slot);
+                  }
+                },
+              ),
             ),
           ),
         ],

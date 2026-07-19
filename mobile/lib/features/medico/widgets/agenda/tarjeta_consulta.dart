@@ -32,92 +32,112 @@ class _TarjetaConsultaState extends State<TarjetaConsulta> {
 
   void _showAtenderDialog(BuildContext context, AppState appState) {
     _notesController.clear();
+    bool isSaving = false;
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            const Icon(Icons.rate_review_outlined, color: AppTheme.primary),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Atender: ${widget.cita.nombrePaciente}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Row(
+            children: [
+              const Icon(Icons.rate_review_outlined, color: AppTheme.primary),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Atender: ${widget.cita.nombrePaciente}',
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
               ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Motivo de consulta: "${widget.cita.motivoConsulta}"',
+                style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, fontStyle: FontStyle.italic),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Notas Médicas y Diagnóstico',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.textPrimary),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _notesController,
+                maxLines: 5,
+                maxLength: 500,
+                enabled: !isSaving,
+                textCapitalization: TextCapitalization.sentences,
+                decoration: const InputDecoration(
+                  hintText: 'Escriba aquí los síntomas, diagnóstico, prescripción médica o notas...',
+                  alignLabelWithHint: true,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: isSaving ? null : () => Navigator.pop(context),
+              child: const Text('Cancelar'),
+            ),
+            ElevatedButton(
+              onPressed: isSaving
+                  ? null
+                  : () async {
+                      final notes = _notesController.text.trim();
+                      if (notes.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Por favor, ingrese las notas médicas antes de completar.'),
+                            backgroundColor: AppTheme.error,
+                          ),
+                        );
+                        return;
+                      }
+
+                      setDialogState(() {
+                        isSaving = true;
+                      });
+
+                      try {
+                        final nav = Navigator.of(context);
+                        final messenger = ScaffoldMessenger.of(context);
+                        await appState.atenderCita(widget.cita.idCita, notes);
+                        nav.pop(); // Dismiss dialog
+
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text('Consulta registrada como Atendida.'),
+                            backgroundColor: AppTheme.secondary,
+                          ),
+                        );
+                      } catch (e) {
+                        setDialogState(() {
+                          isSaving = false;
+                        });
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(e.toString().replaceAll('AuthException: ', '').replaceAll('Exception: ', '')),
+                            backgroundColor: AppTheme.error,
+                          ),
+                        );
+                      }
+                    },
+              child: isSaving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Text('Guardar y Completar'),
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Motivo de consulta: "${widget.cita.motivoConsulta}"',
-              style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, fontStyle: FontStyle.italic),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Notas Médicas y Diagnóstico',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.textPrimary),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _notesController,
-              maxLines: 5,
-              maxLength: 500,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                hintText: 'Escriba aquí los síntomas, diagnóstico, prescripción médica o notas...',
-                alignLabelWithHint: true,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final notes = _notesController.text.trim();
-              if (notes.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Por favor, ingrese las notas médicas antes de completar.'),
-                    backgroundColor: AppTheme.error,
-                  ),
-                );
-                return;
-              }
-              
-              try {
-                final nav = Navigator.of(context);
-                final messenger = ScaffoldMessenger.of(context);
-                await appState.atenderCita(widget.cita.idCita, notes);
-                nav.pop(); // Dismiss dialog
-                
-                messenger.showSnackBar(
-                  const SnackBar(
-                    content: Text('Consulta registrada como Atendida.'),
-                    backgroundColor: AppTheme.secondary,
-                  ),
-                );
-              } catch (e) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(e.toString().replaceAll('Exception: ', '')),
-                    backgroundColor: AppTheme.error,
-                  ),
-                );
-              }
-            },
-            child: const Text('Guardar y Completar'),
-          ),
-        ],
       ),
     );
   }

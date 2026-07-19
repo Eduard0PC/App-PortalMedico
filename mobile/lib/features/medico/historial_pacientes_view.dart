@@ -15,6 +15,15 @@ class _HistorialPacientesViewState extends State<HistorialPacientesView> {
   String _searchQuery = '';
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final appState = AppStateProvider.of(context);
+      appState.fetchCitas();
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
@@ -106,98 +115,110 @@ class _HistorialPacientesViewState extends State<HistorialPacientesView> {
 
           // Results List
           Expanded(
-            child: filteredPatients.isEmpty
-                ? Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(32.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.person_off_outlined,
-                            size: 64,
-                            color: Colors.grey.shade400,
-                          ),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'No se encontraron pacientes',
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Intente buscando con otro nombre o verifique las citas en la agenda.',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                : ListView.builder(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    itemCount: filteredPatients.length,
-                    itemBuilder: (context, index) {
-                      final patient = filteredPatients[index];
-                      final patientId = patient['id'] as int;
-                      final patientName = patient['nombre'] as String;
-
-                      // Get appointments history for this patient
-                      final patientHistory = appState.getCitasPaciente(patientId);
-
-                      return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                        elevation: 1,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          side: BorderSide(color: Colors.grey.shade200),
-                        ),
-                        child: ExpansionTile(
-                          shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                          collapsedShape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
-                          leading: CircleAvatar(
-                            backgroundColor: AppTheme.primaryLight,
-                            child: Text(
-                              patientName.isNotEmpty ? patientName[0].toUpperCase() : 'P',
-                              style: const TextStyle(
-                                color: AppTheme.primary,
-                                fontWeight: FontWeight.bold,
+            child: RefreshIndicator(
+              onRefresh: () => appState.fetchCitas(),
+              child: filteredPatients.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(
+                          height: MediaQuery.of(context).size.height * 0.5,
+                          child: Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(32.0),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.person_off_outlined,
+                                    size: 64,
+                                    color: Colors.grey.shade400,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  const Text(
+                                    'No se encontraron pacientes',
+                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'Intente buscando con otro nombre o verifique las citas en la agenda.',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 14),
+                                  ),
+                                ],
                               ),
                             ),
                           ),
-                          title: Text(
-                            patientName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                              color: AppTheme.textPrimary,
-                            ),
+                        ),
+                      ],
+                    )
+                  : ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: filteredPatients.length,
+                      itemBuilder: (context, index) {
+                        final patient = filteredPatients[index];
+                        final patientId = patient['id'] as int;
+                        final patientName = patient['nombre'] as String;
+
+                        // Get appointments history for this patient
+                        final patientHistory = appState.getCitasPaciente(patientId);
+
+                        return Card(
+                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                          elevation: 1,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(color: Colors.grey.shade200),
                           ),
-                          subtitle: Text(
-                            '${patientHistory.length} consulta${patientHistory.length == 1 ? '' : 's'} en total',
-                            style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
-                          ),
-                          childrenPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          children: [
-                            const Divider(height: 1),
-                            const SizedBox(height: 12),
-                            const Align(
-                              alignment: Alignment.centerLeft,
+                          child: ExpansionTile(
+                            shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                            collapsedShape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                            leading: CircleAvatar(
+                              backgroundColor: AppTheme.primaryLight,
                               child: Text(
-                                'Historial de Consultas',
-                                style: TextStyle(
-                                  fontSize: 13,
+                                patientName.isNotEmpty ? patientName[0].toUpperCase() : 'P',
+                                style: const TextStyle(
+                                  color: AppTheme.primary,
                                   fontWeight: FontWeight.bold,
-                                  color: AppTheme.textPrimary,
                                 ),
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            ...patientHistory.map((cita) => ItemHistorial(cita: cita)),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                            title: Text(
+                              patientName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                            subtitle: Text(
+                              '${patientHistory.length} consulta${patientHistory.length == 1 ? '' : 's'} en total',
+                              style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                            ),
+                            childrenPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            children: [
+                              const Divider(height: 1),
+                              const SizedBox(height: 12),
+                              const Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Historial de Consultas',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.textPrimary,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              ...patientHistory.map((cita) => ItemHistorial(cita: cita)),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+            ),
           ),
         ],
       ),
