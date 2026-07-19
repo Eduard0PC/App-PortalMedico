@@ -20,6 +20,16 @@ class _MedicoHomeScreenState extends State<MedicoHomeScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final appState = AppStateProvider.of(context);
+      appState.fetchCitas();
+      appState.fetchMedicos();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final appState = AppStateProvider.of(context);
 

@@ -64,23 +64,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _handleDemoLogin(String role) async {
-    final appState = AppStateProvider.of(context);
-    setState(() {
-      _isLoading = true;
-    });
-    await appState.login('', '', isDemo: true, demoRole: role);
-    setState(() {
-      _isLoading = false;
-    });
-    if (!mounted) return;
-    if (role == 'Medico') {
-      Navigator.pushReplacementNamed(context, '/medico-home');
-    } else {
-      Navigator.pushReplacementNamed(context, '/paciente-home');
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -211,7 +194,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                   ElevatedButton(
+                  ElevatedButton(
                     onPressed: _isLoading ? null : _handleLogin,
                     child: _isLoading
                         ? const SizedBox(
@@ -224,45 +207,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           )
                         : const Text('Iniciar Sesión'),
                   ),
-                  const SizedBox(height: 16),
-
-                  /*
-                  // Quick Demo Login Buttons (Row of Patient & Doctor)
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _isLoading ? null : () => _handleDemoLogin('Paciente'),
-                          icon: const Icon(Icons.person_outline, color: AppTheme.secondary, size: 18),
-                          label: const Text('Demo Paciente', style: TextStyle(fontSize: 12)),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppTheme.secondary, width: 1.5),
-                            foregroundColor: AppTheme.secondary,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _isLoading ? null : () => _handleDemoLogin('Medico'),
-                          icon: const Icon(Icons.medical_services_outlined, color: AppTheme.primary, size: 18),
-                          label: const Text('Demo Médico', style: TextStyle(fontSize: 12)),
-                          style: OutlinedButton.styleFrom(
-                            side: const BorderSide(color: AppTheme.primary, width: 1.5),
-                            foregroundColor: AppTheme.primary,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),*/
                   const SizedBox(height: 32),
 
                   // Register Redirection

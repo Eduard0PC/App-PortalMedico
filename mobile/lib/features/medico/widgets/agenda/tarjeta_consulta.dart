@@ -81,7 +81,7 @@ class _TarjetaConsultaState extends State<TarjetaConsulta> {
             child: const Text('Cancelar'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               final notes = _notesController.text.trim();
               if (notes.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -93,15 +93,27 @@ class _TarjetaConsultaState extends State<TarjetaConsulta> {
                 return;
               }
               
-              appState.atenderCita(widget.cita.idCita, notes);
-              Navigator.pop(context); // Dismiss dialog
-              
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Consulta registrada como Atendida.'),
-                  backgroundColor: AppTheme.secondary,
-                ),
-              );
+              try {
+                final nav = Navigator.of(context);
+                final messenger = ScaffoldMessenger.of(context);
+                await appState.atenderCita(widget.cita.idCita, notes);
+                nav.pop(); // Dismiss dialog
+                
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('Consulta registrada como Atendida.'),
+                    backgroundColor: AppTheme.secondary,
+                  ),
+                );
+              } catch (e) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(e.toString().replaceAll('Exception: ', '')),
+                    backgroundColor: AppTheme.error,
+                  ),
+                );
+              }
             },
             child: const Text('Guardar y Completar'),
           ),
