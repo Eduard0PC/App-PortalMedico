@@ -29,56 +29,177 @@ class _MedicoHomeScreenState extends State<MedicoHomeScreen> {
     });
   }
 
+  String _getInitials(String name) {
+    var cleaned = name.replaceAll(RegExp(r'^Dr\(a\)\.\s*|^Dr\.\s*|^Dra\.\s*', caseSensitive: false), '').trim();
+    if (cleaned.isEmpty) return 'M';
+    final parts = cleaned.split(' ').where((p) => p.isNotEmpty).toList();
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    } else if (parts.isNotEmpty) {
+      return parts[0][0].toUpperCase();
+    }
+    return 'M';
+  }
+
   @override
   Widget build(BuildContext context) {
     final appState = AppStateProvider.of(context);
+    final userName = appState.currentUserName;
+    final initials = _getInitials(userName);
+    final displayName = userName.toLowerCase().startsWith('dr') ? userName : 'Dr. $userName';
 
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
+        toolbarHeight: 72,
+        elevation: 0,
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.transparent,
+        titleSpacing: 16,
+        title: Row(
           children: [
-            const Text(
-              'Portal del Médico',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.textSecondary),
+            // User Avatar Badge
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    AppTheme.primary,
+                    AppTheme.primaryDark,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppTheme.primary.withOpacity(0.25),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Text(
+                  initials,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
             ),
-            Text(
-              appState.currentUserName,
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
+            const SizedBox(width: 12),
+            // User Info Column
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text(
+                    'PORTAL DEL MÉDICO',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textSecondary,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    displayName,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary,
+                      height: 1.1,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout_rounded, color: AppTheme.error),
-            tooltip: 'Cerrar Sesión',
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Cerrar Sesión'),
-                  content: const Text('¿Está seguro de que desea salir del portal?'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Cancelar'),
+          // Logout Button
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        appState.logout();
-                        Navigator.pushReplacementNamed(context, '/login');
-                      },
-                      style: TextButton.styleFrom(foregroundColor: AppTheme.error),
-                      child: const Text('Salir'),
+                    title: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.error.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.logout_rounded, color: AppTheme.error, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text('Cerrar Sesión'),
+                      ],
                     ),
-                  ],
+                    content: const Text(
+                      '¿Está seguro de que desea salir del portal del médico?',
+                      style: TextStyle(color: AppTheme.textSecondary),
+                    ),
+                    actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Cancelar'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          appState.logout();
+                          Navigator.pushReplacementNamed(context, '/login');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.error,
+                          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text('Salir', style: TextStyle(fontSize: 14)),
+                      ),
+                    ],
+                  ),
+                );
+              },
+              child: Tooltip(
+                message: 'Cerrar Sesión',
+                child: Container(
+                  padding: const EdgeInsets.all(9),
+                  decoration: BoxDecoration(
+                    color: AppTheme.error.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppTheme.error.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.logout_rounded,
+                    color: AppTheme.error,
+                    size: 20,
+                  ),
                 ),
-              );
-            },
+              ),
+            ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 16),
         ],
       ),
       body: IndexedStack(
@@ -87,39 +208,75 @@ class _MedicoHomeScreenState extends State<MedicoHomeScreen> {
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -2),
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 16,
+              offset: const Offset(0, -4),
             ),
           ],
         ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          backgroundColor: Colors.white,
-          selectedItemColor: AppTheme.primary,
-          unselectedItemColor: AppTheme.textSecondary,
-          selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-          unselectedLabelStyle: const TextStyle(fontSize: 12),
-          type: BottomNavigationBarType.fixed,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_view_week_outlined),
-              activeIcon: Icon(Icons.calendar_view_week_rounded),
-              label: 'Agenda Semanal',
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            child: BottomNavigationBar(
+              currentIndex: _currentIndex,
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              selectedItemColor: AppTheme.primary,
+              unselectedItemColor: AppTheme.textSecondary,
+              selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+              unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w500, fontSize: 12),
+              type: BottomNavigationBarType.fixed,
+              onTap: (index) {
+                setState(() {
+                  _currentIndex = index;
+                });
+              },
+              items: [
+                BottomNavigationBarItem(
+                  icon: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _currentIndex == 0 ? AppTheme.primaryLight : Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(Icons.calendar_view_week_outlined),
+                  ),
+                  activeIcon: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryLight,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(Icons.calendar_view_week_rounded, color: AppTheme.primary),
+                  ),
+                  label: 'Agenda Semanal',
+                ),
+                BottomNavigationBarItem(
+                  icon: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _currentIndex == 1 ? AppTheme.primaryLight : Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(Icons.person_search_outlined),
+                  ),
+                  activeIcon: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryLight,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(Icons.person_search_rounded, color: AppTheme.primary),
+                  ),
+                  label: 'Historial Clínico',
+                ),
+              ],
             ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person_search_outlined),
-              activeIcon: Icon(Icons.person_search_rounded),
-              label: 'Historial Clínico',
-            ),
-          ],
+          ),
         ),
       ),
     );
