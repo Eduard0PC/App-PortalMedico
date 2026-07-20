@@ -72,7 +72,7 @@ class PasoMedico extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 28,
-                        backgroundColor: AppTheme.primary.withOpacity(0.1),
+                        backgroundColor: AppTheme.primary.withValues(alpha: 0.1),
                         child: Text(
                           doc.nombre[0] + doc.apellido[0],
                           style: const TextStyle(

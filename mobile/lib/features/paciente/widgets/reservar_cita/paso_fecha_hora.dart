@@ -53,7 +53,7 @@ class PasoFechaHora extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.primary.withOpacity(0.5)),
+              border: Border.all(color: AppTheme.primary.withValues(alpha: 0.5)),
             ),
             child: Row(
               children: [
@@ -97,9 +97,9 @@ class PasoFechaHora extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 16),
             decoration: BoxDecoration(
-              color: AppTheme.error.withOpacity(0.05),
+              color: AppTheme.error.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.error.withOpacity(0.1)),
+              border: Border.all(color: AppTheme.error.withValues(alpha: 0.1)),
             ),
             child: Column(
               children: [

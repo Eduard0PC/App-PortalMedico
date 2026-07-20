@@ -274,7 +274,7 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
                               color: isCurrent
                                   ? AppTheme.primary
                                   : isActive
-                                      ? AppTheme.primary.withOpacity(0.7)
+                                      ? AppTheme.primary.withValues(alpha: 0.7)
                                       : Colors.grey.shade300,
                               shape: BoxShape.circle,
                             ),
@@ -333,7 +333,7 @@ class ReservarCitaViewState extends State<ReservarCitaView> {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 5,
                     offset: const Offset(0, -3),
                   ),

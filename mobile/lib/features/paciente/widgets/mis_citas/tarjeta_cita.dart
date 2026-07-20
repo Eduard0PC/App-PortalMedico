@@ -270,7 +270,7 @@ class TarjetaCita extends StatelessWidget {
                         width: double.infinity,
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryLight.withOpacity(0.5),
+                          color: AppTheme.primaryLight.withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(color: AppTheme.primaryLight),
                         ),

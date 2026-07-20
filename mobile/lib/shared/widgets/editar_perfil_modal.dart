@@ -181,7 +181,7 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.primary.withOpacity(0.12),
+                      color: AppTheme.primary.withValues(alpha: 0.12),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -237,9 +237,9 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
                               Container(
                                 padding: const EdgeInsets.all(12),
                                 decoration: BoxDecoration(
-                                  color: AppTheme.error.withOpacity(0.1),
+                                  color: AppTheme.error.withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: AppTheme.error.withOpacity(0.3)),
+                                  border: Border.all(color: AppTheme.error.withValues(alpha: 0.3)),
                                 ),
                                 child: Row(
                                   children: [

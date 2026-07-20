@@ -82,7 +82,7 @@ class _PacienteHomeScreenState extends State<PacienteHomeScreen> {
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppTheme.primary.withOpacity(0.25),
+                    color: AppTheme.primary.withValues(alpha: 0.25),
                     blurRadius: 8,
                     offset: const Offset(0, 3),
                   ),
@@ -146,7 +146,7 @@ class _PacienteHomeScreenState extends State<PacienteHomeScreen> {
                     color: AppTheme.primaryLight,
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppTheme.primary.withOpacity(0.15),
+                      color: AppTheme.primary.withValues(alpha: 0.15),
                       width: 1,
                     ),
                   ),
@@ -177,7 +177,7 @@ class _PacienteHomeScreenState extends State<PacienteHomeScreen> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppTheme.error.withOpacity(0.1),
+                            color: AppTheme.error.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: const Icon(Icons.logout_rounded, color: AppTheme.error, size: 20),
@@ -220,10 +220,10 @@ class _PacienteHomeScreenState extends State<PacienteHomeScreen> {
                 child: Container(
                   padding: const EdgeInsets.all(9),
                   decoration: BoxDecoration(
-                    color: AppTheme.error.withOpacity(0.08),
+                    color: AppTheme.error.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: AppTheme.error.withOpacity(0.2),
+                      color: AppTheme.error.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),
@@ -249,7 +249,7 @@ class _PacienteHomeScreenState extends State<PacienteHomeScreen> {
           borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 16,
               offset: const Offset(0, -4),
             ),
