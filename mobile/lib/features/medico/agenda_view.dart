@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import '../../core/app_state.dart';
 import '../../core/theme.dart';
-import '../../shared/models.dart';
+import 'widgets/agenda/agenda_header.dart';
+import 'widgets/agenda/tarjeta_consulta.dart';
+import 'widgets/agenda/tarjeta_disponible.dart';
 
 class AgendaView extends StatefulWidget {
   const AgendaView({super.key});
@@ -14,120 +15,112 @@ class AgendaView extends StatefulWidget {
 
 class _AgendaViewState extends State<AgendaView> {
   late DateTime _selectedDay;
+  late DateTime _focusedWeekMonday;
   late List<DateTime> _weekDays;
-  final _notesController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     initializeDateFormatting('es', null);
     
-    // Calculate current week days (Monday to Friday)
     final today = DateTime.now();
     final todayOnly = DateTime(today.year, today.month, today.day);
-    // Adjust to Monday
-    final monday = todayOnly.subtract(Duration(days: todayOnly.weekday - 1));
+    // Adjust to Monday of current week
+    _focusedWeekMonday = todayOnly.subtract(Duration(days: todayOnly.weekday - 1));
+    _weekDays = List.generate(5, (index) => _focusedWeekMonday.add(Duration(days: index)));
     
-    _weekDays = List.generate(5, (index) => monday.add(Duration(days: index)));
-    
-    // Set selected day. If today is weekend, default to Monday
+    // Set selected day: if today is weekend (Sat/Sun), default to Monday of current week
     if (todayOnly.weekday == DateTime.saturday || todayOnly.weekday == DateTime.sunday) {
-      _selectedDay = monday;
+      _selectedDay = _focusedWeekMonday;
     } else {
       _selectedDay = todayOnly;
     }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final appState = AppStateProvider.of(context);
+      appState.fetchCitas();
+    });
   }
 
-  @override
-  void dispose() {
-    _notesController.dispose();
-    super.dispose();
+  void _updateWeek(DateTime monday) {
+    setState(() {
+      _focusedWeekMonday = monday;
+      _weekDays = List.generate(5, (index) => monday.add(Duration(days: index)));
+    });
   }
 
-  void _showAtenderDialog(BuildContext context, AppState appState, Cita cita) {
-    _notesController.clear();
-    showDialog(
+  void _goToPreviousWeek() {
+    final prevMonday = _focusedWeekMonday.subtract(const Duration(days: 7));
+    _updateWeek(prevMonday);
+    final dayOffset = _selectedDay.weekday - 1;
+    final targetDayIndex = (dayOffset >= 0 && dayOffset < 5) ? dayOffset : 0;
+    setState(() {
+      _selectedDay = prevMonday.add(Duration(days: targetDayIndex));
+    });
+  }
+
+  void _goToNextWeek() {
+    final nextMonday = _focusedWeekMonday.add(const Duration(days: 7));
+    _updateWeek(nextMonday);
+    final dayOffset = _selectedDay.weekday - 1;
+    final targetDayIndex = (dayOffset >= 0 && dayOffset < 5) ? dayOffset : 0;
+    setState(() {
+      _selectedDay = nextMonday.add(Duration(days: targetDayIndex));
+    });
+  }
+
+  void _goToToday() {
+    final today = DateTime.now();
+    final todayOnly = DateTime(today.year, today.month, today.day);
+    final monday = todayOnly.subtract(Duration(days: todayOnly.weekday - 1));
+    _updateWeek(monday);
+    setState(() {
+      if (todayOnly.weekday == DateTime.saturday || todayOnly.weekday == DateTime.sunday) {
+        _selectedDay = monday;
+      } else {
+        _selectedDay = todayOnly;
+      }
+    });
+  }
+
+  Future<void> _selectDateFromPicker() async {
+    final picked = await showDatePicker(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            const Icon(Icons.rate_review_outlined, color: AppTheme.primary),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'Atender: ${cita.nombrePaciente}',
-                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
+      initialDate: _selectedDay,
+      firstDate: DateTime(2020, 1, 1),
+      lastDate: DateTime(2030, 12, 31),
+      selectableDayPredicate: (DateTime val) {
+        // Disable Saturday and Sunday in date picker since doctors don't work weekends
+        return val.weekday != DateTime.saturday && val.weekday != DateTime.sunday;
+      },
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: AppTheme.primary,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: AppTheme.textPrimary,
             ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Motivo de consulta: "${cita.motivoConsulta}"',
-              style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary, fontStyle: FontStyle.italic),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Notas Médicas y Diagnóstico',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppTheme.textPrimary),
-            ),
-            const SizedBox(height: 8),
-            TextField(
-              controller: _notesController,
-              maxLines: 5,
-              maxLength: 500,
-              textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                hintText: 'Escriba aquí los síntomas, diagnóstico, prescripción médica o notas...',
-                alignLabelWithHint: true,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
           ),
-          ElevatedButton(
-            onPressed: () {
-              final notes = _notesController.text.trim();
-              if (notes.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Por favor, ingrese las notas médicas antes de completar.'),
-                    backgroundColor: AppTheme.error,
-                  ),
-                );
-                return;
-              }
-              
-              appState.atenderCita(cita.idCita, notes);
-              Navigator.pop(context); // Dismiss dialog
-              
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Consulta registrada como Atendida.'),
-                  backgroundColor: AppTheme.secondary,
-                ),
-              );
-            },
-            child: const Text('Guardar y Completar'),
-          ),
-        ],
-      ),
+          child: child!,
+        );
+      },
     );
+
+    if (picked != null) {
+      final pickedOnly = DateTime(picked.year, picked.month, picked.day);
+      final monday = pickedOnly.subtract(Duration(days: pickedOnly.weekday - 1));
+      _updateWeek(monday);
+      setState(() {
+        _selectedDay = pickedOnly;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final appState = AppStateProvider.of(context);
-    final theme = Theme.of(context);
 
     // Filter appointments for the selected day
     final dayCitas = appState.citas.where((c) {
@@ -147,283 +140,45 @@ class _AgendaViewState extends State<AgendaView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Weekly day selector header
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: _weekDays.map((day) {
-                    final isSelected = day.year == _selectedDay.year &&
-                                       day.month == _selectedDay.month &&
-                                       day.day == _selectedDay.day;
-                    final dayName = DateFormat('EEE', 'es').format(day).replaceAll('.', '');
-                    final dayNum = DateFormat('d').format(day);
-
-                    return Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                        child: InkWell(
-                          onTap: () {
-                            setState(() {
-                              _selectedDay = day;
-                            });
-                          },
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(vertical: 10),
-                            decoration: BoxDecoration(
-                              color: isSelected ? AppTheme.primary : Colors.grey.shade50,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: isSelected ? AppTheme.primary : Colors.grey.shade200,
-                              ),
-                            ),
-                            child: Column(
-                              children: [
-                                Text(
-                                  dayName.toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600,
-                                    color: isSelected ? Colors.white70 : AppTheme.textSecondary,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  dayNum,
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: isSelected ? Colors.white : AppTheme.textPrimary,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  DateFormat("EEEE, d 'de' MMMM", 'es').format(_selectedDay),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: AppTheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
+          // Agenda header widget with week controls & date picker
+          AgendaHeader(
+            focusedWeekMonday: _focusedWeekMonday,
+            selectedDay: _selectedDay,
+            weekDays: _weekDays,
+            onDaySelected: (day) {
+              setState(() {
+                _selectedDay = day;
+              });
+            },
+            onPreviousWeek: _goToPreviousWeek,
+            onNextWeek: _goToNextWeek,
+            onGoToToday: _goToToday,
+            onSelectDateFromPicker: _selectDateFromPicker,
           ),
           
           const Divider(height: 1, color: Color(0xFFE2E8F0)),
 
           // Scrollable Timeline Slots list
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-              itemCount: baseSlots.length,
-              itemBuilder: (context, index) {
-                final slot = baseSlots[index];
-                
-                // Check if doctor has an appointment starting in this slot
-                final appointmentIndex = dayCitas.indexWhere((c) => c.horaInicio == slot && c.estado != 'Cancelada');
-                
-                if (appointmentIndex != -1) {
-                  final cita = dayCitas[appointmentIndex];
-                  return _buildAppointmentTile(context, appState, cita);
-                } else {
-                  return _buildEmptyTile(slot);
-                }
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAppointmentTile(BuildContext context, AppState appState, Cita cita) {
-    final isAttended = cita.estado == 'Atendida';
-    final accentColor = isAttended ? AppTheme.secondary : AppTheme.primary;
-    
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-        border: Border(
-          left: BorderSide(color: accentColor, width: 5),
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Row with Time Slot & Status Badge
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.access_time_rounded, size: 16, color: AppTheme.textSecondary),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${cita.horaInicio} - ${cita.horaFin}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: AppTheme.textPrimary,
-                      ),
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isAttended ? const Color(0xFFE6F7F0) : AppTheme.primaryLight,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    cita.estado,
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      color: accentColor,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            
-            // Patient Name
-            Text(
-              cita.nombrePaciente,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            
-            // Reason
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'Motivo: ',
-                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: AppTheme.textSecondary),
-                ),
-                Expanded(
-                  child: Text(
-                    cita.motivoConsulta,
-                    style: const TextStyle(fontSize: 13, color: AppTheme.textPrimary),
-                  ),
-                ),
-              ],
-            ),
-            
-            // Medical Notes (if attended)
-            if (isAttended && cita.notaMedica != null) ...[
-              const SizedBox(height: 12),
-              const Divider(height: 1),
-              const SizedBox(height: 8),
-              const Text(
-                'Notas Médicas:',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppTheme.secondary),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                cita.notaMedica!,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-            ],
-            
-            // Action Button (if programada)
-            if (!isAttended) ...[
-              const SizedBox(height: 12),
-              ElevatedButton.icon(
-                onPressed: () => _showAtenderDialog(context, appState, cita),
-                icon: const Icon(Icons.assignment_turned_in_outlined, size: 18),
-                label: const Text('Atender Consulta'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEmptyTile(String time) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 48,
-            child: Text(
-              time,
-              style: const TextStyle(
-                fontWeight: FontWeight.w500,
-                color: AppTheme.textSecondary,
-                fontSize: 13,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Container(
-              height: 40,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: Colors.grey.shade200,
-                  style: BorderStyle.solid,
-                ),
-              ),
-              child: const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Row(
-                  children: [
-                    Icon(Icons.check_circle_outline_rounded, size: 14, color: Colors.grey),
-                    SizedBox(width: 8),
-                    Text(
-                      'Disponible',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
-                ),
+            child: RefreshIndicator(
+              onRefresh: () => appState.fetchCitas(),
+              child: ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                itemCount: baseSlots.length,
+                itemBuilder: (context, index) {
+                  final slot = baseSlots[index];
+                  
+                  // Check if doctor has an appointment starting in this slot
+                  final appointmentIndex = dayCitas.indexWhere((c) => c.horaInicio == slot && c.estado != 'Cancelada');
+                  
+                  if (appointmentIndex != -1) {
+                    final cita = dayCitas[appointmentIndex];
+                    return TarjetaConsulta(cita: cita);
+                  } else {
+                    return TarjetaDisponible(time: slot);
+                  }
+                },
               ),
             ),
           ),

@@ -90,5 +90,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapMcp("/mcp").RequireAuthorization(policy => policy.RequireRole("Paciente"));
 
 app.Run();

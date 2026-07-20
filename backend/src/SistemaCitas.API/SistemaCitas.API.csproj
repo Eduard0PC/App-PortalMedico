@@ -20,6 +20,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SistemaCitas.Application\SistemaCitas.Application.csproj" />
     <ProjectReference Include="..\SistemaCitas.Infrastructure\SistemaCitas.Infrastructure.csproj" />
+    <ProjectReference Include="..\SistemaCitas.Mcp\SistemaCitas.Mcp.csproj" />
   </ItemGroup>
 
 </Project>

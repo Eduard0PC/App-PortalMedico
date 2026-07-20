@@ -65,11 +65,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   Future<void> _handleRegister() async {
     if (_formKey.currentState!.validate()) {
-      if (_fechaNacimiento == null) {
-        setState(() {
-          _errorMessage = 'Por favor, selecciona tu fecha de nacimiento';
-        });
-        return;
+      if (_fechaNacimiento != null) {
+        final now = DateTime.now();
+        final todayUtc = DateTime.utc(now.year, now.month, now.day);
+        final selectedUtc = DateTime.utc(_fechaNacimiento!.year, _fechaNacimiento!.month, _fechaNacimiento!.day);
+        if (!selectedUtc.isBefore(todayUtc)) {
+          setState(() {
+            _errorMessage = 'La fecha de nacimiento no puede ser futura.';
+          });
+          return;
+        }
       }
 
       setState(() {
@@ -155,9 +160,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: AppTheme.error.withOpacity(0.1),
+                      color: AppTheme.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppTheme.error.withOpacity(0.3)),
+                      border: Border.all(color: AppTheme.error.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
@@ -186,8 +191,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     prefixIcon: Icon(Icons.person_outline),
                   ),
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
+                    final trimmed = value?.trim() ?? '';
+                    if (trimmed.isEmpty) {
                       return 'Por favor ingresa tu nombre';
+                    }
+                    if (trimmed.length > 100) {
+                      return 'El nombre no puede tener más de 100 caracteres';
                     }
                     return null;
                   },
@@ -205,8 +214,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     prefixIcon: Icon(Icons.person_outline),
                   ),
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
+                    final trimmed = value?.trim() ?? '';
+                    if (trimmed.isEmpty) {
                       return 'Por favor ingresa tu apellido';
+                    }
+                    if (trimmed.length > 100) {
+                      return 'El apellido no puede tener más de 100 caracteres';
                     }
                     return null;
                   },
@@ -223,11 +236,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     prefixIcon: Icon(Icons.email_outlined),
                   ),
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
+                    final trimmed = value?.trim() ?? '';
+                    if (trimmed.isEmpty) {
                       return 'Por favor ingresa tu correo';
                     }
-                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value.trim())) {
-                      return 'Ingresa un correo electrónico válido';
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(trimmed)) {
+                      return 'El correo no tiene un formato válido.';
+                    }
+                    if (trimmed.length > 150) {
+                      return 'El correo no puede tener más de 150 caracteres';
                     }
                     return null;
                   },
@@ -240,13 +257,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   keyboardType: TextInputType.phone,
                   textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(
-                    labelText: 'Teléfono',
+                    labelText: 'Teléfono (opcional)',
                     hintText: 'Ej. 555123456',
                     prefixIcon: Icon(Icons.phone_outlined),
                   ),
                   validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Por favor ingresa tu número de teléfono';
+                    final trimmed = value?.trim() ?? '';
+                    if (trimmed.isNotEmpty) {
+                      if (trimmed.length < 7 || trimmed.length > 12) {
+                        return 'El teléfono debe tener entre 7 y 12 caracteres.';
+                      }
                     }
                     return null;
                   },
@@ -272,7 +292,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'Fecha de Nacimiento',
+                              'Fecha de Nacimiento (opcional)',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: AppTheme.textSecondary,
@@ -325,7 +345,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       return 'Por favor ingresa tu contraseña';
                     }
                     if (value.length < 6) {
-                      return 'La contraseña debe tener al menos 6 caracteres';
+                      return 'La contraseña debe tener al menos 6 caracteres.';
                     }
                     return null;
                   },

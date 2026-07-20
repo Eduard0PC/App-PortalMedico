@@ -4,5 +4,6 @@
     <Project Path="src/SistemaCitas.Application/SistemaCitas.Application.csproj" />
     <Project Path="src/SistemaCitas.Domain/SistemaCitas.Domain.csproj" />
     <Project Path="src/SistemaCitas.Infrastructure/SistemaCitas.Infrastructure.csproj" />
+    <Project Path="src/SistemaCitas.Mcp/SistemaCitas.Mcp.csproj" />
   </Folder>
 </Solution>

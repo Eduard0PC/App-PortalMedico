@@ -7,7 +7,9 @@ using SistemaCitas.Domain.Primitives;
 using SistemaCitas.Infrastructure.Persistence;
 using SistemaCitas.Infrastructure.Persistence.Repositories;
 using SistemaCitas.Infrastructure.Security;
-
+using System.Net.Http.Headers;
+using SistemaCitas.Infrastructure.Chat;
+using SistemaCitas.Mcp.Tools;
 namespace SistemaCitas.Infrastructure;
 
 public static class DependencyInjection
@@ -30,6 +32,19 @@ public static class DependencyInjection
         services.AddScoped<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtService, JwtService>();
 
+
+        services.AddScoped<DisponibilidadMcpTools>();
+
+        services.AddMcpServer()
+            .WithHttpTransport()
+            .WithTools<DisponibilidadMcpTools>();
+
+        services.AddHttpClient<IChatService, OpenRouterChatService>(client =>
+        {
+            client.BaseAddress = new Uri("https://openrouter.ai/api/v1/");
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", configuration["OpenRouter:ApiKey"]);
+        });
         return services;
     }
 }

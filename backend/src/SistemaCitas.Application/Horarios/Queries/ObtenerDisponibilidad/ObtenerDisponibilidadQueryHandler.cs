@@ -7,8 +7,6 @@ namespace SistemaCitas.Application.Horarios.Queries.ObtenerDisponibilidad;
 public sealed class ObtenerDisponibilidadQueryHandler
     : IRequestHandler<ObtenerDisponibilidadQuery, List<BloqueDisponibleDto>>
 {
-    private static readonly TimeSpan DuracionBloque = TimeSpan.FromMinutes(30);
-
     private readonly IMedicoRepository _medicoRepository;
     private readonly IHorarioMedicoRepository _horarioRepository;
     private readonly ICitaRepository _citaRepository;
@@ -43,26 +41,6 @@ public sealed class ObtenerDisponibilidadQueryHandler
         var citasDelDia = await _citaRepository.ObtenerPorMedicoYFechaAsync(
             request.IdMedico, request.Fecha, ct);
 
-        var disponibles = new List<BloqueDisponibleDto>();
-
-        foreach (var horario in horariosDelDia)
-        {
-            var inicioBloque = horario.HoraInicio;
-
-            while (inicioBloque.Add(DuracionBloque) <= horario.HoraFin)
-            {
-                var finBloque = inicioBloque.Add(DuracionBloque);
-
-                var ocupado = citasDelDia.Any(c =>
-                    inicioBloque < c.HoraFin && c.HoraInicio < finBloque);
-
-                if (!ocupado)
-                    disponibles.Add(new BloqueDisponibleDto(inicioBloque, finBloque));
-
-                inicioBloque = finBloque;
-            }
-        }
-
-        return disponibles.OrderBy(b => b.HoraInicio).ToList();
+        return CalculadorDisponibilidad.CalcularBloques(horariosDelDia, citasDelDia);
     }
 }
