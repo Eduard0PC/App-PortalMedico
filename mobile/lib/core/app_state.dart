@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import '../shared/models.dart';
 import 'repositories/auth_repository.dart';
+import 'repositories/chat_repository.dart';
 import 'repositories/citas_repository.dart';
 import 'repositories/medicos_repository.dart';
 import 'repositories/pacientes_repository.dart';
+import '../shared/models/chat_message.dart';
 
 class AuthException implements Exception {
   final String message;
@@ -18,6 +20,7 @@ class AppState extends ChangeNotifier {
   final MedicosRepository _medicosRepository;
   final CitasRepository _citasRepository;
   final PacientesRepository _pacientesRepository;
+  final ChatRepository _chatRepository;
 
   // Current logged in user (null if guest)
   String? _currentUserEmail;
@@ -56,10 +59,12 @@ class AppState extends ChangeNotifier {
     MedicosRepository? medicosRepository,
     CitasRepository? citasRepository,
     PacientesRepository? pacientesRepository,
+    ChatRepository? chatRepository,
   })  : _authRepository = authRepository ?? AuthRepository(),
         _medicosRepository = medicosRepository ?? MedicosRepository(),
         _citasRepository = citasRepository ?? CitasRepository(),
-        _pacientesRepository = pacientesRepository ?? PacientesRepository();
+        _pacientesRepository = pacientesRepository ?? PacientesRepository(),
+        _chatRepository = chatRepository ?? ChatRepository();
 
   // Authentication Actions
   Future<bool> login(String email, String password) async {
@@ -296,6 +301,17 @@ class AppState extends ChangeNotifier {
     } catch (e) {
       throw AuthException(e.toString().replaceAll('Exception: ', ''));
     }
+  }
+
+  Future<String> enviarMensajeChat(String mensaje, List<ChatMessage> historial) async {
+    if (_token == null) {
+      throw AuthException('Debe iniciar sesión para usar el chat.');
+    }
+    return await _chatRepository.enviarMensaje(
+      token: _token!,
+      mensaje: mensaje,
+      historial: historial,
+    );
   }
 }
 

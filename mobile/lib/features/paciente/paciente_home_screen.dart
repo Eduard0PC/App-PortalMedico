@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/app_state.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/editar_perfil_modal.dart';
+import 'chat_view.dart';
 import 'mis_citas_view.dart';
 import 'reservar_cita_view.dart';
 
@@ -55,6 +56,7 @@ class _PacienteHomeScreenState extends State<PacienteHomeScreen> {
         },
       ),
       const MisCitasView(),
+      const ChatView(),
     ];
 
     return Scaffold(
@@ -313,6 +315,25 @@ class _PacienteHomeScreenState extends State<PacienteHomeScreen> {
                     child: const Icon(Icons.calendar_month_rounded, color: AppTheme.primary),
                   ),
                   label: 'Mis Citas',
+                ),
+                BottomNavigationBarItem(
+                  icon: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _currentIndex == 2 ? AppTheme.primaryLight : Colors.transparent,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(Icons.smart_toy_outlined),
+                  ),
+                  activeIcon: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryLight,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Icon(Icons.smart_toy_rounded, color: AppTheme.primary),
+                  ),
+                  label: 'Asistente IA',
                 ),
               ],
             ),
