@@ -58,6 +58,7 @@ public sealed class OpenRouterChatService : IChatService
                 ["model"] = _modelo,
                 ["messages"] = mensajes.DeepClone(),
                 ["tools"] = ConstruirDefinicionDeHerramientas(),
+                ["max_tokens"] = 1000,
             };
 
             using var respuestaHttp = await _httpClient.PostAsJsonAsync("chat/completions", body, ct);
