@@ -26,14 +26,20 @@ class AppState extends ChangeNotifier {
   String? _currentUserEmail;
   String? _currentUserName;
   int? _currentUserId;
-  String? _userRole; // 'Paciente' o 'Medico'
+  String? _userRole; // rolePaciente o roleMedico
   String? _token;
 
-  bool get isLoggedIn => _currentUserEmail != null;
+  // Role Constants
+  static const String rolePaciente = 'Paciente';
+  static const String roleMedico = 'Medico';
+
+  bool get isLoggedIn => _currentUserEmail != null && _currentUserId != null;
   String get currentUserName => _currentUserName ?? 'Usuario';
-  int get currentUserId => _currentUserId ?? 0;
+  int? get currentUserId => _currentUserId;
   String get currentUserEmail => _currentUserEmail ?? '';
-  String get userRole => _userRole ?? 'Paciente';
+  String get userRole => _userRole ?? rolePaciente;
+  bool get isMedico => userRole == roleMedico;
+  bool get isPaciente => userRole == rolePaciente;
   String? get token => _token;
 
   // Data lists
@@ -46,7 +52,7 @@ class AppState extends ChangeNotifier {
 
   // Dynamic filtering based on logged in role
   List<Cita> get citas => _citas
-      .where((c) => userRole == 'Medico' ? c.medico.idMedico == currentUserId : c.idPaciente == currentUserId)
+      .where((c) => isMedico ? c.medico.idMedico == _currentUserId : c.idPaciente == _currentUserId)
       .toList()
     ..sort((a, b) {
       final cmp = b.fecha.compareTo(a.fecha);
@@ -252,8 +258,8 @@ class AppState extends ChangeNotifier {
   List<Map<String, dynamic>> get uniquePatients {
     final patientsMap = <int, String>{};
     for (var cita in _citas) {
-      if (userRole == 'Medico') {
-        if (cita.medico.idMedico == currentUserId) {
+      if (isMedico) {
+        if (cita.medico.idMedico == _currentUserId) {
           patientsMap[cita.idPaciente] = cita.nombrePaciente;
         }
       } else {
@@ -268,19 +274,19 @@ class AppState extends ChangeNotifier {
       ..sort((a, b) => b.fecha.compareTo(a.fecha));
   }
 
-  Future<Paciente?> fetchPacientePerfil(int id) async {
-    if (_token == null) return null;
+  Future<Paciente?> fetchPacientePerfil(int? id) async {
+    if (_token == null || id == null) return null;
     return await _pacientesRepository.fetchPacientePerfil(_token!, id);
   }
 
   Future<bool> actualizarPacientePerfil({
-    required int id,
+    required int? id,
     required String nombre,
     required String apellido,
     String? telefono,
     DateTime? fechaNacimiento,
   }) async {
-    if (_token == null) {
+    if (_token == null || id == null) {
       throw AuthException('Debe iniciar sesión para actualizar el perfil.');
     }
     try {

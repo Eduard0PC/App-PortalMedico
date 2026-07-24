@@ -40,7 +40,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
         if (success) {
           if (!mounted) return;
-          if (appState.userRole == 'Medico') {
+          if (appState.isMedico) {
             Navigator.pushReplacementNamed(context, '/medico-home');
           } else {
             Navigator.pushReplacementNamed(context, '/paciente-home');
