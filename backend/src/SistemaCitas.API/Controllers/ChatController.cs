@@ -6,7 +6,6 @@ using SistemaCitas.Application.Chat.Commands.EnviarMensajeChat;
 
 namespace SistemaCitas.API.Controllers;
 
-/// <summary>Body de POST /api/chat/mensaje.</summary>
 public sealed record EnviarMensajeRequest(string Mensaje, List<MensajeChatDto>? Historial);
 
 [ApiController]
